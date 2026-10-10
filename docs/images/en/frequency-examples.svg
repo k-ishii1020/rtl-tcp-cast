@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 660" role="img" aria-labelledby="title desc">
+ <title id="title">Frequencies that fit in one capture band and frequencies that do not</title>
+ <desc id="desc">At 2.4 MS/s, both examples use a 121.75 MHz center. The valid example captures 121.5 and 122 MHz within the theoretical 120.55–122.95 MHz range. In the invalid example, 121.5 MHz is in range but 124 MHz is out of range.</desc>
+ <defs><marker id="arrow-en" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0 0L10 5L0 10z" fill="#53677b"/></marker></defs>
+ <rect width="1000" height="660" rx="22" fill="#f4f7fb"/>
+ <g font-family="system-ui,'Segoe UI',sans-serif" fill="#20364b">
+  <rect x="20" y="18" width="960" height="284" rx="18" fill="#f0faf4" stroke="#b8ddc7" stroke-width="2"/>
+  <text x="55" y="58" font-size="25" font-weight="700" fill="#17633c">OK | One dongle can receive both</text>
+  <text x="55" y="91" font-size="18">Sample rate: 2.4 MS/s · Theoretical capture: 120.55–122.95 MHz</text>
+  <rect x="203" y="158" width="494" height="48" rx="8" fill="#cdeed9" stroke="#318354" stroke-width="2"/>
+  <line x1="140" y1="182" x2="960" y2="182" stroke="#53677b" stroke-width="3" marker-end="url(#arrow-en)"/>
+  <g stroke="#23804e" stroke-width="4"><line x1="399" y1="137" x2="399" y2="220"/><line x1="502" y1="137" x2="502" y2="220"/></g>
+  <g fill="#23804e"><circle cx="399" cy="182" r="8"/><circle cx="502" cy="182" r="8"/></g>
+  <line x1="450" y1="124" x2="450" y2="222" stroke="#174e85" stroke-width="3" stroke-dasharray="7 6"/>
+  <g font-size="17" font-weight="700" text-anchor="middle"><text x="399" y="130">121.5 MHz</text><text x="502" y="130">122 MHz</text></g>
+  <g stroke="#53677b" stroke-width="2"><line x1="203" y1="174" x2="203" y2="192"/><line x1="697" y1="174" x2="697" y2="192"/></g>
+  <g font-size="16" text-anchor="middle"><text x="203" y="232">120.55 MHz</text><text x="697" y="232">122.95 MHz</text></g>
+  <text x="450" y="270" text-anchor="middle" font-size="18" font-weight="700" fill="#174e85">Center frequency: 121.75 MHz</text>
+
+  <rect x="20" y="320" width="960" height="322" rx="18" fill="#fff5f3" stroke="#e8c1bb" stroke-width="2"/>
+  <text x="55" y="360" font-size="25" font-weight="700" fill="#a33b30">NOT OK | One dongle cannot receive both</text>
+  <text x="55" y="393" font-size="18">Sample rate: 2.4 MS/s · Center: 121.75 MHz · Capture: 120.55–122.95 MHz</text>
+  <rect x="203" y="462" width="494" height="48" rx="8" fill="#cdeed9" stroke="#318354" stroke-width="2"/>
+  <line x1="140" y1="486" x2="960" y2="486" stroke="#53677b" stroke-width="3" marker-end="url(#arrow-en)"/>
+  <line x1="399" y1="433" x2="399" y2="524" stroke="#23804e" stroke-width="4"/><line x1="914" y1="433" x2="914" y2="524" stroke="#bb493d" stroke-width="4"/>
+  <circle cx="399" cy="486" r="8" fill="#23804e"/><circle cx="914" cy="486" r="8" fill="#bb493d"/>
+  <line x1="450" y1="422" x2="450" y2="526" stroke="#174e85" stroke-width="3" stroke-dasharray="7 6"/>
+  <text x="399" y="426" text-anchor="middle" font-size="17" font-weight="700" fill="#17633c">121.5 MHz</text><text x="914" y="426" text-anchor="middle" font-size="17" font-weight="700" fill="#a33b30">124 MHz</text>
+  <g stroke="#53677b" stroke-width="2"><line x1="203" y1="478" x2="203" y2="496"/><line x1="697" y1="478" x2="697" y2="496"/></g>
+  <g font-size="16" text-anchor="middle"><text x="203" y="538">120.55 MHz</text><text x="697" y="538">122.95 MHz</text></g>
+  <path d="M450 526L510 558H530" fill="none" stroke="#174e85" stroke-width="2"/><text x="538" y="565" font-size="18" font-weight="700" fill="#174e85">Center frequency: 121.75 MHz</text>
+  <text x="500" y="615" text-anchor="middle" font-size="17" font-weight="700" fill="#a33b30">121.5 MHz is in range; 124 MHz is out of range</text>
+ </g>
+</svg>

@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="RTL-TCP-CASTのセットアップ、受信データの配信、使い方を説明します。">
+<meta name="theme-color" content="#ffffff">
+<link rel="icon" type="image/png" href="images/rtl-tcp-cast.png">
+<title>RTL-TCP-CAST — 使い方</title>
+<style>
+:root{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;color:#182635;background:#f3f6fa;line-height:1.7;scroll-behavior:smooth}*{box-sizing:border-box}body{margin:0}header{padding:.8rem max(1.2rem,calc((100% - 940px)/2));background:linear-gradient(130deg,#102b45,#1765a7);color:white;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap}h1{font-size:1.65rem;line-height:1.2;margin:0}header nav{background:transparent;border:0;padding:.25rem;position:static}header nav a{display:inline-block;margin:.15rem .25rem;padding:.45rem .7rem;color:#fff;font-weight:700;text-decoration:underline;text-underline-offset:.18em;border-radius:5px}main{max-width:940px;margin:auto;padding:1.2rem}section{scroll-margin-top:1rem;background:white;border:1px solid #dae3ed;border-radius:16px;padding:clamp(1.2rem,4vw,2rem);margin:1.2rem 0;box-shadow:0 8px 24px #172b4408}h2{margin:.2rem 0 1rem;line-height:1.3}h3{margin:1.5rem 0 .3rem;line-height:1.4}.lead{font-size:1.08rem;color:#34485d}.note{background:#eef6ff;border-left:4px solid #1265b1;padding:.7rem 1rem;border-radius:0 8px 8px 0}li{padding:.18rem 0}code{background:#f0f3f7;padding:.1rem .35rem;border-radius:4px;overflow-wrap:anywhere}a{color:#07599f}a:focus-visible,summary:focus-visible{outline:3px solid #f0a400;outline-offset:3px}header a:focus-visible{outline-color:#fff}figure{margin:1.2rem 0 1.5rem;padding:.6rem;border:1px solid #dae3ed;border-radius:12px;background:#fbfdff}figure img{display:block;width:100%;height:auto;border-radius:8px}figcaption{padding:.55rem .35rem .15rem;color:#43586d;font-size:.95rem}details{border:1px solid #dae3ed;border-radius:8px;padding:.6rem 1rem;margin:.6rem 0}summary{font-weight:650;cursor:pointer}footer{text-align:center;color:#43586d;padding:1rem 1rem 3rem}.skip-link{position:absolute;left:.75rem;top:-5rem;padding:.65rem 1rem;background:#fff;color:#102b45;z-index:3;border:2px solid #1265b1;border-radius:6px}.skip-link:focus{top:.5rem}@media(max-width:600px){body{font-size:16px}header{align-items:flex-start;flex-direction:column;gap:.35rem;padding:.75rem 1rem}header nav{padding:0}header nav a{margin-left:0;margin-right:.4rem}main{padding:.7rem}section{border-radius:12px}}@media(prefers-reduced-motion:reduce){:root{scroll-behavior:auto}}
+.settings-shot img{width:auto;max-width:100%;margin:0 auto}
+h2,h3,h4{scroll-margin-top:1rem}
+.heading-link{display:inline-flex;align-items:center;justify-content:center;margin-inline-start:.35em;color:#52687d;font-size:.72em;font-weight:500;text-decoration:none;vertical-align:middle;opacity:0}
+h2:hover .heading-link,h3:hover .heading-link,h4:hover .heading-link{opacity:.48}
+.heading-link:hover,.heading-link:focus-visible{opacity:1}
+@media(hover:none){.heading-link{opacity:.45}}
+:root{color:#303a3b;background:#f2f4f3}
+header{background:#fff;color:#303a3b;border-bottom:1px solid #dfe4e1}
+.brand{display:flex;align-items:center;gap:.7rem;min-width:0}
+.brand img{display:block;width:2.55rem;height:2.55rem;object-fit:contain}
+h1{color:#303a3b}
+header nav a{color:#5e6868;font-size:.92rem;text-decoration:none}
+header nav a:hover{text-decoration:underline;text-decoration-color:#b45f39;text-underline-offset:.2em}
+header nav a[hidden]{display:none}
+header a:focus-visible{outline-color:#b45f39}
+main{color:#364142}
+section{background:#fff;border-color:#dfe4e1;box-shadow:0 3px 14px #273b3210}
+h2{border-bottom:2px solid #b45f39;padding-bottom:.42rem}
+.lead{color:#435050}
+.note{background:#fff6ee;border-left-color:#b45f39;color:#394344}
+code{background:#f0f2f1}
+a{color:#914a2e}
+a:focus-visible,summary:focus-visible{outline-color:#b45f39}
+figure{border-color:#e0e5e2;background:#fcfdfc}
+figcaption,footer{color:#606a69}
+.skip-link{color:#303a3b;border-color:#b45f39}
+</style>
+</head>
+<body>
+<a class="skip-link" href="#main">本文へ移動</a>
+<header><div class="brand"><img src="images/rtl-tcp-cast.png" alt=""><h1>RTL-TCP-CAST</h1></div><nav aria-label="Language navigation"><a href="#ja" lang="ja">日本語ガイド</a><a href="#en" lang="en" hidden>English guide</a></nav></header>
+<main id="main">
+<section id="ja" lang="ja">
+<h2 id="ja-features">アプリの特徴<a class="heading-link" href="#ja-features" aria-label="この見出しへのリンク" title="この見出しへのリンク"><span aria-hidden="true">#</span></a></h2><p class="lead">RTL-SDR USBデバイス（USBドングル）を統合管理し、各ドングルのIQデータを複数クライアントへ配信します。</p>
+<figure><img src="images/ja/topology.svg" alt="同じPC内のRTL-TCP-CASTと受信アプリ群、およびLAN内の別PCにある受信アプリを示す図"><figcaption>受信アプリは同じPC内で使うことも、LAN内の別PCから接続することもできます。</figcaption></figure>
+<ul><li>1台のドングルのIQストリームを複数の受信アプリへ配信</li><li>複数台のドングルをタブで管理し、受信範囲ごとに別のIQを配信</li><li>LAN内のクライアントにも配信</li><li>クライアント操作またはRTL-TCP-CASTから周波数などを集中管理</li></ul>
+<p class="lead">1台のRTL-SDRで受信したIQデータを、RTL TCP対応の複数アプリへ同時に配信します。</p>
+<p class="note"><strong>Gain、中心周波数、周波数補正（PPM）は、USBドングルを共有する全クライアントに共通です。</strong> サンプルレートが2.4 MS/sの場合、理論上のIQ受信範囲は中心周波数の±1.2 MHzです（中心周波数が355 MHzなら353.8～356.2 MHz）。実際に利用できる範囲は、ドングルや受信条件によって狭くなることがあります。</p>
+<p>例えば、SDR#で121.5 MHzと122 MHzを同時に聴取する場合、2本のUSBドングルが必要でしたが、同じ受信帯域に含まれるため、このアプリなら1本のUSBドングルでまかなえます。サンプルレートが2.4 MS/s、中心周波数が121.75 MHzの場合、理論上の受信範囲は120.55～122.95 MHzです。</p>
+<p>一方、121.5 MHzと124 MHzは2.5 MHz離れているため、同じ受信帯域には収まりません。中心周波数をOK例と同じ121.75 MHzにすると、121.5 MHzは受信範囲内ですが、124 MHzは範囲外です。この場合は複数のUSBドングルで受信範囲を分ける必要があります。</p>
+<figure><img src="images/ja/frequency-examples.svg" alt="OK例とNG例はいずれも中心周波数121.75 MHz。NG例では121.5 MHzは受信帯域内、124 MHzは範囲外にある数直線図"><figcaption>サンプルレート2.4 MS/sの理論上の受信範囲の例です。実際に利用できる範囲はドングルや受信条件によって狭くなる場合があります。</figcaption></figure>
+<h2 id="ja-setup">セットアップガイド<a class="heading-link" href="#ja-setup" aria-label="この見出しへのリンク" title="この見出しへのリンク"><span aria-hidden="true">#</span></a></h2><h3 id="ja-first-time-setup">初回セットアップ<a class="heading-link" href="#ja-first-time-setup" aria-label="この見出しへのリンク" title="この見出しへのリンク"><span aria-hidden="true">#</span></a></h3>
+<h3 id="ja-get-rtl-tcp">1. rtl_tcpを用意する<a class="heading-link" href="#ja-get-rtl-tcp" aria-label="この見出しへのリンク" title="この見出しへのリンク"><span aria-hidden="true">#</span></a></h3>
+<ol><li>PCで初めてRTL-SDRを使用する方は事前にUSBドングル用のWinUSBドライバーを導入します。<br>※ドライバー導入済みの場合は不要です。<br><a href="https://www.rtl-sdr.com/rtl-sdr-quick-start-guide/">RTL-SDR Quick Start Guide</a></li><li><a href="https://github.com/rtlsdrblog/rtl-sdr-blog/releases">RTL-SDR Blog Releases</a>を開き、Windows ReleaseのAssetsから<code>Release.zip</code>をダウンロードします。</li><li>ZIPを展開し、<code>x64</code>フォルダーを任意の場所に置きます（例：<code>C:\tools\rtl-sdr</code>）。</li></ol>
+<h3 id="ja-stream-local">2. USBドングルからIQを配信する<a class="heading-link" href="#ja-stream-local" aria-label="この見出しへのリンク" title="この見出しへのリンク"><span aria-hidden="true">#</span></a></h3>
+<ol><li><a href="https://github.com/k-ishii1020/rtl-tcp-cast/releases/latest">GitHub Releasesの最新リリース</a>を開き、Assetsから<code>RTL-TCP-Cast-win-x64.zip</code>をダウンロードします。</li><li>RTL-TCP-CASTの配布ZIPを展開して<code>RTL-TCP-Cast.exe</code>を起動します。</li><li>「設定 → アプリ全体の設定…」で手順1-3で配置したフォルダ内にある<code>rtl_tcp.exe</code>を指定します。</li><li>配信タブで「RTL-SDRデバイス」を選び、ドングルを選択します。一覧が空なら「更新」を押してください。</li><li>配信ポート（初期値<code>11234</code>）を確認して「配信開始」を押します。「配信中」になったら受信アプリを接続します。</li></ol>
+<p>同じPCの受信アプリにはホスト<code>127.0.0.1</code>とRTL-TCP-CASTの配信ポートを指定します。標準ポートの場合は<code>11234</code>です。受信アプリはrtl_tcpの<code>1234</code>ではなく、RTL-TCP-CASTへ接続します。</p>
+<h2 id="ja-other-options">そのほか<a class="heading-link" href="#ja-other-options" aria-label="この見出しへのリンク" title="この見出しへのリンク"><span aria-hidden="true">#</span></a></h2>
+<h3 id="ja-existing-rtl-tcp">起動済みRTL-TCPを使う<a class="heading-link" href="#ja-existing-rtl-tcp" aria-label="この見出しへのリンク" title="この見出しへのリンク"><span aria-hidden="true">#</span></a></h3><p>「起動済みRTL-TCP」を選び、接続先とポートを入力します。同じPCの標準設定は<code>127.0.0.1:1234</code>です。受信アプリ用の配信ポートは別に指定して開始します。このモードではRTL-TCP-CASTは既存のrtl_tcpを停止しません。</p>
+<h3 id="ja-lan-streaming">LANへ配信する<a class="heading-link" href="#ja-lan-streaming" aria-label="この見出しへのリンク" title="この見出しへのリンク"><span aria-hidden="true">#</span></a></h3><p>開始前に「LANへ配信」を有効にします。受信PCには配信PCのLANアドレスとRTL-TCP-CASTの配信ポートを指定します。必要に応じてWindowsファイアウォールでプライベートネットワークの通信を許可してください。RTL TCPは認証・暗号化を行わないため、信頼できるLANで利用します。</p>
+<h3 id="ja-tuning">チューニング操作を管理する<a class="heading-link" href="#ja-tuning" aria-label="この見出しへのリンク" title="この見出しへのリンク"><span aria-hidden="true">#</span></a></h3><ul><li><strong>クライアントの操作をすべて受け入れる：</strong>受信アプリの設定コマンドを転送します。最後に届いたコマンドが全クライアントに影響します。</li><li><strong>このアプリで集中管理（ロック）：</strong>クライアントの設定を止め、中心周波数・PPM・Gain・サンプルレートをこのアプリで設定します。</li></ul><p>受信アプリの中心周波数とサンプルレートも合わせてください。</p>
+<h3 id="ja-serial-id">RTL-SDRのシリアルIDを変更する<a class="heading-link" href="#ja-serial-id" aria-label="この見出しへのリンク" title="この見出しへのリンク"><span aria-hidden="true">#</span></a></h3>
+<ul><li>「設定 → RTL-SDRシリアル番号変更…」を開き、対象のドングルを選びます。</li><li>新しいIDを入力して「保存」を押します。半角英数字・ハイフン・アンダースコアを使用でき、最大文字数は画面に表示されます。複数のドングルには異なるIDを設定すると識別しやすくなります。</li><li>変更前に、対象ドングルを使用中の他のソフトを終了してください。保存後はUSBを抜き差ししてデバイス一覧を更新します。</li></ul>
+<figure class="settings-shot"><img src="images/ja/serial-number-change.png" alt="RTL-SDRシリアル番号変更画面。デバイスを選び、新しいIDを入力する"></figure>
+<h4 id="ja-sdrsharp-rtl-tcp">ヒント：SDR#をRTL-TCP-CASTへ接続する<a class="heading-link" href="#ja-sdrsharp-rtl-tcp" aria-label="この見出しへのリンク" title="この見出しへのリンク"><span aria-hidden="true">#</span></a></h4>
+<ol><li>RTL-TCP-CASTで配信を開始し、タブのポート番号を確認します（初期値<code>11234</code>）。</li><li>SDR#のメニューから「Source → RTL-SDR TCP」を選びます。</li><li>Hostに<code>127.0.0.1</code>（SDRデバイスとRTL-TCP-CASTがあるPCでSDR#を動かす場合）、PortにRTL-TCP-CASTのポート番号、Sample RateにRTL-TCP-CASTと同じ値を設定し、SDR#で受信を開始します。</li></ol>
+<figure class="settings-shot"><img src="images/ja/sdrsharp-rtl-tcp-menu.png" alt="SDR#のメニューでSourceからRTL-SDR TCPを選択する"><figcaption>「Source → RTL-SDR TCP」を選択します。</figcaption></figure>
+<figure class="settings-shot"><img src="images/ja/sdrsharp-rtl-tcp-settings.png" alt="SDR#のRTL-SDR TCP設定。Hostに127.0.0.1、Portに11234を指定した例"><figcaption>同じPCならHostは<code>127.0.0.1</code>、PortはRTL-TCP-CASTの配信ポートです。</figcaption></figure>
+<div class="note"><strong>RTL-SDRの中心周波数を変えずにSDR#の聴取周波数を変える：</strong><ul><li>SDR#でStartする前に、SDR#VFOの周波数をSDRデバイスの中心周波数に合わせてください。</li><li>RTL-TCP-CASTで「クライアント操作ロック」を有効にし、SDR#のチューニング方式下記画像のようにを「Free tuning」にして、スペクトラムまたはウォーターフォール上の目的の周波数をクリックします。</li><li>配信中の受信帯域内で選局してください。帯域外の周波数は受信できません。</li></ul></div>
+<figure class="settings-shot"><img src="images/ja/sdrsharp-free-tuning.png" alt="SDR#の周波数表示横にあるFree tuningボタン"><figcaption>周波数表示横のボタンを「Free tuning」にします。</figcaption></figure>
+</section>
+<section id="en" lang="en" hidden>
+<h2 id="en-guide">English guide<a class="heading-link" href="#en-guide" aria-label="Link to this heading" title="Link to this heading"><span aria-hidden="true">#</span></a></h2><h3 id="en-features">Features<a class="heading-link" href="#en-features" aria-label="Link to this heading" title="Link to this heading"><span aria-hidden="true">#</span></a></h3>
+<p class="lead">RTL-TCP-CAST manages RTL-SDR devices in separate tabs and distributes each dongle's IQ data to multiple receiver clients.</p>
+<figure><img src="images/en/topology.svg" alt="RTL-TCP-CAST and receiver apps on a local PC, with another receiver app on a PC over the LAN"><figcaption>Receiver apps can run on the local PC or connect from another PC on the LAN.</figcaption></figure>
+<ul><li>Share one dongle's IQ stream with multiple receiver applications</li><li>Manage multiple dongles in separate tabs, each with its own capture band</li><li>Stream to clients on your local network</li><li>Manage tuner settings centrally or allow client tuning commands</li></ul>
+<p class="lead">RTL-TCP-CAST distributes IQ data received by one RTL-SDR to multiple applications that support RTL TCP. Manage dongles in separate tabs.</p>
+<p class="note"><strong>Gain, center frequency, and frequency correction (PPM) are shared by all clients using the same RTL-SDR.</strong> At 2.4 MS/s, the theoretical IQ capture range is ±1.2 MHz around the center frequency (353.8–356.2 MHz when centered at 355 MHz). The usable range may be narrower depending on the dongle and reception conditions.</p>
+<p>For example, listening to 121.5 MHz and 122 MHz simultaneously in SDR# used to require two USB dongles. Since both frequencies fit in the same capture band, RTL-TCP-CAST can serve both from one dongle. At 2.4 MS/s with a center frequency of 121.75 MHz, the theoretical capture range is 120.55–122.95 MHz.</p>
+<p>By contrast, 121.5 MHz and 124 MHz are 2.5 MHz apart and cannot both fit in the same capture band. With the center frequency kept at 121.75 MHz, 121.5 MHz is in range but 124 MHz is out of range. Multiple dongles are needed to cover both frequencies at once.</p>
+<figure><img src="images/en/frequency-examples.svg" alt="Both examples use a 121.75 MHz center. In the invalid example, 121.5 MHz is inside the capture band and 124 MHz is outside it"><figcaption>Examples use the theoretical bandwidth at 2.4 MS/s; the usable range may be narrower depending on the dongle and reception conditions.</figcaption></figure>
+<h3 id="en-setup">Setup guide<a class="heading-link" href="#en-setup" aria-label="Link to this heading" title="Link to this heading"><span aria-hidden="true">#</span></a></h3><h4 id="en-first-time-setup">First-time setup<a class="heading-link" href="#en-first-time-setup" aria-label="Link to this heading" title="Link to this heading"><span aria-hidden="true">#</span></a></h4>
+<h3 id="en-get-rtl-tcp">1. Get rtl_tcp<a class="heading-link" href="#en-get-rtl-tcp" aria-label="Link to this heading" title="Link to this heading"><span aria-hidden="true">#</span></a></h3>
+<ol><li>Open <a href="https://github.com/rtlsdrblog/rtl-sdr-blog/releases">RTL-SDR Blog Releases</a> and download <code>Release.zip</code> from a Windows Release's Assets.</li><li>Extract the ZIP and place its <code>x64</code> folder somewhere convenient, for example <code>C:\tools\rtl-sdr</code>. Keep the DLLs next to the executables.</li><li>Install a WinUSB driver for your dongle.</li></ol>
+<h3 id="en-stream-local">2. Stream from a local dongle<a class="heading-link" href="#en-stream-local" aria-label="Link to this heading" title="Link to this heading"><span aria-hidden="true">#</span></a></h3>
+<ol><li>Open the <a href="https://github.com/k-ishii1020/rtl-tcp-cast/releases/latest">latest GitHub Release</a> and download <code>RTL-TCP-Cast-win-x64.zip</code> from Assets.</li><li>Extract the RTL-TCP-CAST release ZIP and run <code>RTL-TCP-Cast.exe</code>.</li><li>Open “Settings → Application settings” and select <code>rtl_tcp.exe</code>.</li><li>In a session tab, select “RTL-SDR device” and choose your dongle. Press “Refresh” if needed. Device enumeration needs a 64-bit RTL-SDR DLL beside rtl_tcp.</li><li>Set the distribution port (default <code>11234</code>), then select “Start streaming”. Connect your receiver when the status shows streaming.</li></ol>
+<figure><img src="images/en/local-streaming.svg" alt="Diagram showing a local RTL-SDR stream being sent by RTL-TCP-CAST to two receiver applications"><figcaption>Select a dongle, start streaming, and connect clients to RTL-TCP-CAST.</figcaption></figure>
+<p>For a receiver on the same PC, use host <code>127.0.0.1</code> and RTL-TCP-CAST's distribution port (default <code>11234</code>). Receivers connect to RTL-TCP-CAST, not rtl_tcp's upstream port <code>1234</code>.</p>
+<h3 id="en-other-options">Other options<a class="heading-link" href="#en-other-options" aria-label="Link to this heading" title="Link to this heading"><span aria-hidden="true">#</span></a></h3><h4 id="en-existing-rtl-tcp">Use an existing RTL-TCP<a class="heading-link" href="#en-existing-rtl-tcp" aria-label="Link to this heading" title="Link to this heading"><span aria-hidden="true">#</span></a></h4><p>Choose “Running RTL-TCP” and enter its host and port. The default local endpoint is <code>127.0.0.1:1234</code>. Set a separate distribution port for receivers and start streaming. RTL-TCP-CAST will not stop the existing rtl_tcp process.</p>
+<h4 id="en-lan-streaming">Stream over your LAN<a class="heading-link" href="#en-lan-streaming" aria-label="Link to this heading" title="Link to this heading"><span aria-hidden="true">#</span></a></h4><p>Enable “Stream to LAN” before starting. Configure clients with the streaming PC's LAN address and RTL-TCP-CAST distribution port. Allow private-network traffic in Windows Firewall as needed. RTL TCP has no authentication or encryption; use it on a trusted LAN.</p>
+<h4 id="en-tuning">Manage tuning commands<a class="heading-link" href="#en-tuning" aria-label="Link to this heading" title="Link to this heading"><span aria-hidden="true">#</span></a></h4><ul><li><strong>Accept commands from all clients:</strong> forward receiver commands. The latest command affects every client.</li><li><strong>Manage from this app (lock):</strong> block client tuning commands and set frequency, PPM, gain, and sample rate in this app.</li></ul><p>Set receiver applications to the same center frequency and sample rate.</p>
+<h4 id="en-serial-id">Change an RTL-SDR serial ID<a class="heading-link" href="#en-serial-id" aria-label="Link to this heading" title="Link to this heading"><span aria-hidden="true">#</span></a></h4>
+<p>Open “Settings → RTL-SDR Serial Number…”, select a dongle, enter a new ID, and select “Save”. Use letters, numbers, hyphens, or underscores; the maximum length is shown in the dialog. Assign distinct IDs to make multiple dongles easier to identify. Close other software using the dongle before changing its ID. After saving, unplug and reconnect the dongle, then refresh the device list.</p>
+<h4 id="en-sdrsharp-rtl-tcp">Tip: Connect SDR# to RTL-TCP-CAST<a class="heading-link" href="#en-sdrsharp-rtl-tcp" aria-label="Link to this heading" title="Link to this heading"><span aria-hidden="true">#</span></a></h4>
+<ol><li>Start streaming in RTL-TCP-CAST and note the tab's port (default <code>11234</code>).</li><li>In SDR#, select “Source → RTL-SDR TCP”.</li><li>Set Host to <code>127.0.0.1</code> when SDR# runs on the same PC as the RTL-SDR, set Port to the RTL-TCP-CAST tab's port, and choose the same Sample Rate as RTL-TCP-CAST. Then start SDR#.</li></ol>
+<p>To change SDR#'s listening frequency without retuning the RTL-SDR center, enable “Client Operation Lock” in RTL-TCP-CAST, choose “Free tuning” in SDR#, and select a signal in the displayed spectrum. This works only within the streamed capture bandwidth.</p>
+<h4 id="en-bandwidth-example">Example: monitoring 350–360 MHz<a class="heading-link" href="#en-bandwidth-example" aria-label="Link to this heading" title="Link to this heading"><span aria-hidden="true">#</span></a></h4>
+<p>At a 2.4 MS/s sample rate, one capture spans about 2.4 MHz. With the center tuned to 355 MHz, the dongle captures approximately:</p>
+<p class="note"><code>353.8 MHz ───────── [ center 355.0 MHz ] ───────── 356.2 MHz</code></p>
+<p>Signals at, for example, 354.5 and 355.5 MHz are inside this captured slice. Whether multiple clients can process different signals in the slice depends on each receiver application's features and settings. If a client sends an RTL TCP command to change the dongle's center frequency, the captured slice moves for every client.</p>
+<p><strong>The full 350–360 MHz range cannot be captured at once.</strong> Its 10 MHz span is wider than the 2.4 MS/s capture bandwidth. Scan it by retuning sequentially, or use an SDR that can capture a wider bandwidth. The <a href="https://github.com/osmocom/rtl-sdr/blob/master/include/rtl-sdr.h">rtl-sdr API specification</a> notes that sample loss is expected above 2.4 MS/s.</p>
+<figure><img src="images/en/bandwidth.svg" alt="At 2.4 MS/s and a 355 MHz center frequency, the theoretical capture spans about 353.8 to 356.2 MHz within 350 to 360 MHz"><figcaption>The usable range may be narrower due to filtering and other factors.</figcaption></figure>
+<h4 id="en-multiple-dongles">Multiple dongles: divide the range<a class="heading-link" href="#en-multiple-dongles" aria-label="Link to this heading" title="Link to this heading"><span aria-hidden="true">#</span></a></h4><p>For example, three dongles centered at 351, 355, and 359 MHz each capture about 2.4 MHz. Together they can cover portions of the 350–360 MHz range. RTL-TCP-CAST can manage and stream data from multiple dongles; connect a separate antenna to each one.</p>
+<figure><img src="images/en/shared-band.svg" alt="Two receiver applications share the same IQ stream and tuned bandwidth from one RTL-SDR"><figcaption>Retuning the dongle moves the captured band for every client.</figcaption></figure>
+<h3 id="en-troubleshooting">Troubleshooting<a class="heading-link" href="#en-troubleshooting" aria-label="Link to this heading" title="Link to this heading"><span aria-hidden="true">#</span></a></h3>
+<p>See the <a href="https://github.com/k-ishii1020/rtl-tcp-cast/blob/main/docs/USER-GUIDE.md">detailed user guide</a>.</p>
+</section>
+<section id="contact">
+<h2 id="contact-title">お問い合わせ / Contact<a class="heading-link" href="#contact-title" aria-label="Contact section link / お問い合わせ欄へのリンク" title="Contact section link / お問い合わせ欄へのリンク"><span aria-hidden="true">#</span></a></h2>
+<p lang="ja">お問い合わせはXアカウント <a href="https://x.com/AWS210_8492">@AWS210_8492</a> までお寄せください。</p>
+<p lang="en">For inquiries, contact <a href="https://x.com/AWS210_8492">@AWS210_8492</a> on X.</p>
+</section>
+<section id="disclaimer">
+<h2 id="disclaimer-title">免責事項 / Disclaimer<a class="heading-link" href="#disclaimer-title" aria-label="免責事項へのリンク / Link to disclaimer" title="免責事項へのリンク / Link to disclaimer"><span aria-hidden="true">#</span></a></h2>
+<p lang="ja">本ソフトウェアは「現状有姿」で提供され、明示または黙示を問わず、商品性、特定目的への適合性、正確性、継続的な動作などを保証しません。利用および結果の確認は利用者の責任で行ってください。適用法令で認められる最大限の範囲において、作者および著作権者は、本ソフトウェアの使用または使用不能に起因する損害（データの消失、機器や他のソフトウェアへの損害、業務の中断、第三者との紛争などを含みます）について責任を負いません。ただし、適用法令により免責できない責任を除きます。利用者は、受信・録音・配信に関係する法令、機器や受信アプリの利用条件、および第三者ソフトウェアのライセンスを遵守してください。</p>
+<p lang="en">This software is provided “as is”, without warranties of any kind, express or implied, including merchantability, fitness for a particular purpose, accuracy, or uninterrupted operation. You are responsible for evaluating and using it. To the maximum extent permitted by applicable law, the author and copyright holders will not be liable for damages arising from using, or being unable to use, this software, including loss of data, damage to equipment or other software, business interruption, or third-party claims, except where such liability cannot be excluded by law. Users are responsible for complying with applicable laws, terms governing their hardware and receiver applications, and third-party software licenses.</p>
+</section>
+</main>
+<footer>Copyright (c) 2026 いしかず · RTL-TCP-CAST · <a href="https://github.com/k-ishii1020/rtl-tcp-cast">GitHub</a> · GPL-2.0-or-later</footer>
+</body>
+</html>

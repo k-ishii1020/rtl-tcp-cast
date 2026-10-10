@@ -1,0 +1,22 @@
+RTL-TCP-CAST
+Copyright (c) 2026 いしかず
+SPDX-License-Identifier: GPL-2.0-or-later
+
+RTL-TCP-CAST is free software: you can redistribute it and/or modify it under
+the terms of the GNU General Public License as published by the Free
+Software Foundation, either version 2 of the License, or (at your option)
+any later version.
+
+RTL-TCP-CAST is distributed in the hope that it will be useful, but WITHOUT
+ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
+in LICENSE (LICENSE.txt in the binary distribution) for more details.
+
+Bundled .NET / WPF components retain their own licenses and notices,
+provided in the licenses directory of the binary distribution.
+External RTL-SDR tools and libraries are not bundled.
+
+The matching source and build instructions must be available alongside
+the binary ZIP in the same release. A GitHub source archive of the exact
+build tag, or RTL-TCP-Cast-source.zip, can provide these files.
+See LICENSES.md and the source README.md for details.

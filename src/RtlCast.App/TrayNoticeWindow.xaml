@@ -1,0 +1,15 @@
+<Window x:Class="RtlCast.App.TrayNoticeWindow"
+ xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+ xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+ Title="RTL-TCP-CAST" Icon="Assets/rtl-tcp-cast.ico" Width="420" SizeToContent="Height"
+ ResizeMode="NoResize" WindowStartupLocation="CenterOwner" ShowInTaskbar="False"
+ Style="{StaticResource {x:Type Window}}">
+ <StackPanel Margin="16">
+  <TextBlock Text="ウィンドウを閉じても、RTL-TCP-CASTはタスクトレイに常駐し、配信を続けます。"
+             TextWrapping="Wrap" Margin="0,0,0,10" />
+  <TextBlock Text="終了する場合は、タスクトレイのRTL-TCP-CASTアイコンを右クリックして「終了」を選んでください。"
+             TextWrapping="Wrap" Margin="0,0,0,16" />
+  <CheckBox x:Name="DoNotShowAgainBox" Content="次回から表示しない" Margin="0,0,0,16" />
+  <Button Content="OK" Width="80" HorizontalAlignment="Right" IsDefault="True" IsCancel="True" Click="Ok_Click" />
+ </StackPanel>
+</Window>

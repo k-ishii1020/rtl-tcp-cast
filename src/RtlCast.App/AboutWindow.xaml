@@ -1,0 +1,34 @@
+<Window x:Class="RtlCast.App.AboutWindow"
+ xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+ xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+ Title="RTL-TCP-CAST バージョン情報" Width="420" Height="340" ResizeMode="NoResize"
+ WindowStartupLocation="CenterOwner" ShowInTaskbar="False" Background="#F0F0F0"
+ FontFamily="Segoe UI" FontSize="12">
+ <Grid Margin="16">
+  <Grid.RowDefinitions>
+   <RowDefinition Height="*" />
+   <RowDefinition Height="Auto" />
+  </Grid.RowDefinitions>
+  <StackPanel Grid.Row="0">
+   <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+    <TextBlock Text="RTL-TCP-CAST" FontSize="22" FontWeight="Bold" />
+    <TextBlock x:Name="VersionText" Margin="10,8,0,0" Foreground="#444" />
+   </StackPanel>
+   <TextBlock Text="原作者: いしかず" Margin="0,0,0,8" />
+   <TextBlock Margin="0,0,0,4">
+    <Run Text="Webサイト: " />
+    <Hyperlink NavigateUri="https://radio-network.jp/" RequestNavigate="Hyperlink_RequestNavigate">https://radio-network.jp/</Hyperlink>
+   </TextBlock>
+   <TextBlock Margin="0,0,0,8">
+    <Run Text="GitHub: " />
+    <Hyperlink NavigateUri="https://github.com/k-ishii1020" RequestNavigate="Hyperlink_RequestNavigate">https://github.com/k-ishii1020</Hyperlink>
+   </TextBlock>
+   <TextBlock x:Name="CopyrightText" Margin="0,0,0,8" />
+   <TextBlock Text="ライセンス: GNU GPL version 2 またはそれ以降" Margin="0,0,0,4" />
+   <TextBlock Text="本ソフトウェアは無保証で提供されます。再配布にはライセンス条件が適用されます。"
+              TextWrapping="Wrap" />
+  </StackPanel>
+  <Button Grid.Row="1" Content="閉じる" Width="80" HorizontalAlignment="Right"
+          IsDefault="True" IsCancel="True" Click="Close_Click" />
+ </Grid>
+</Window>

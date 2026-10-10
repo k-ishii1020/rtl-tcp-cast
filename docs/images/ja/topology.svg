@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1500 860" role="img" aria-labelledby="title desc">
+  <title id="title">RTL-SDR USBドングル複数台をRTL-TCP-CASTで管理し、各受信データを複数アプリへ配信</title>
+  <desc id="desc">アンテナ、RTL-SDR USBドングル、RTL-TCP-CAST、複数の受信アプリを同じPC内に配置し、別の受信アプリはLAN内の別PCに配置しています。</desc>
+  <defs><marker id="arrow" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0 0L7 3.5L0 7z" fill="#276da6"/></marker></defs>
+  <rect width="1500" height="860" rx="26" fill="#f3f7fb"/>
+  <g font-family="system-ui,'Segoe UI',sans-serif" fill="#17324b">
+    <g text-anchor="middle" font-size="27" font-weight="750"><text x="140" y="90">アンテナ</text><text x="355" y="90">RTL-SDR USBドングル</text><text x="812" y="90">RTL-TCP-CAST</text><text x="1310" y="90">受信アプリ</text></g>
+    <rect x="205" y="122" width="1250" height="543" rx="24" fill="none" stroke="#73899b" stroke-width="3" stroke-dasharray="10 8"/>
+    <rect x="220" y="135" width="276" height="36" rx="8" fill="#f3f7fb"/>
+    <text x="358" y="160" text-anchor="middle" font-size="22" font-weight="750">ローカルPC</text>
+    <rect x="535" y="145" width="555" height="495" rx="25" fill="#e5f2ff" stroke="#2873b5" stroke-width="4"/>
+    <text x="812" y="180" text-anchor="middle" font-size="29" font-weight="800" fill="#155d97">複数台を集中管理・配信</text>
+    <text x="812" y="211" text-anchor="middle" font-size="19" fill="#435d75">ドングルごとに別々のIQストリーム</text>
+    <g text-anchor="middle" font-family="'Segoe UI Emoji','Apple Color Emoji',sans-serif" font-size="58" aria-label="アンテナ">
+      <text x="140" y="289">📡</text><text x="140" y="444">📡</text><text x="140" y="599">📡</text>
+    </g>
+    <g fill="#dce4eb" stroke="#73899b" stroke-width="3">
+      <rect x="235" y="231" width="225" height="78" rx="15"/><rect x="460" y="250" width="34" height="40" rx="3" fill="#c5d0d8"/>
+      <rect x="235" y="386" width="225" height="78" rx="15"/><rect x="460" y="405" width="34" height="40" rx="3" fill="#c5d0d8"/>
+      <rect x="235" y="541" width="225" height="78" rx="15"/><rect x="460" y="560" width="34" height="40" rx="3" fill="#c5d0d8"/>
+    </g>
+    <g fill="#263746"><rect x="235" y="231" width="22" height="78" rx="8"/><rect x="235" y="386" width="22" height="78" rx="8"/><rect x="235" y="541" width="22" height="78" rx="8"/></g>
+    <g text-anchor="middle" font-size="26" font-weight="750"><text x="360" y="279">RTL-SDR</text><text x="360" y="434">RTL-SDR</text><text x="360" y="589">RTL-SDR</text></g>
+    <g fill="#fff" stroke="#77a5d0" stroke-width="3"><rect x="575" y="235" width="475" height="70" rx="17"/><rect x="575" y="390" width="475" height="70" rx="17"/><rect x="575" y="545" width="475" height="70" rx="17"/></g>
+    <g text-anchor="middle" font-size="25" font-weight="750"><text x="812" y="279">IQデータ</text><text x="812" y="434">IQデータ</text><text x="812" y="589">IQデータ</text></g>
+    <g fill="#fff" stroke="#94aabd" stroke-width="3">
+      <rect x="1185" y="215" width="250" height="54" rx="14"/><rect x="1185" y="281" width="250" height="54" rx="14"/>
+      <rect x="1185" y="370" width="250" height="54" rx="14"/><rect x="1185" y="436" width="250" height="54" rx="14"/>
+      <rect x="1185" y="525" width="250" height="54" rx="14"/>
+    </g>
+    <g text-anchor="middle" font-size="22" font-weight="700">
+      <text x="1310" y="250">受信アプリ</text><text x="1310" y="316">受信アプリ</text>
+      <text x="1310" y="405">受信アプリ</text><text x="1310" y="471">受信アプリ</text>
+      <text x="1310" y="560">受信アプリ</text>
+    </g>
+    <rect x="1165" y="695" width="290" height="100" rx="20" fill="#edf4f8" stroke="#9bb3c2" stroke-width="3"/>
+    <text x="1310" y="722" text-anchor="middle" font-size="20" font-weight="750">LAN内の別PC</text>
+    <rect x="1185" y="737" width="250" height="46" rx="13" fill="#fff" stroke="#94aabd" stroke-width="3"/>
+    <text x="1310" y="767" text-anchor="middle" font-size="22" font-weight="700">受信アプリ</text>
+    <g fill="none" stroke="#276da6" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow)">
+      <path d="M183 270H230"/><path d="M500 270H570"/><path d="M183 425H230"/><path d="M500 425H570"/><path d="M183 580H230"/><path d="M500 580H570"/>
+    </g>
+    <g fill="none" stroke="#276da6" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M1050 270H1125"/><path d="M1050 425H1125"/><path d="M1050 580H1125"/>
+    </g>
+    <g fill="none" stroke="#276da6" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow)">
+      <path d="M1125 270V242H1180"/><path d="M1125 270V308H1180"/>
+      <path d="M1125 425V397H1180"/><path d="M1125 425V463H1180"/>
+      <path d="M1125 580V552H1180"/>
+    </g>
+    <path d="M1090 620H1125V760H1180" fill="none" stroke="#276da6" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow)"/>
+    <text x="1132" y="687" font-size="14" font-weight="750" fill="#435d75">LAN</text>
+    <text x="750" y="840" text-anchor="middle" font-size="20" fill="#435d75">同じPC内でも、LAN内の別PCからでも受信データを利用できます</text>
+  </g>
+</svg>

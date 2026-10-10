@@ -1,0 +1,20 @@
+<Window x:Class="RtlCast.App.SerialNumberWindow"
+ xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+ xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+ Title="シリアル番号変更" Width="520" Height="270" ResizeMode="NoResize"
+ WindowStartupLocation="CenterOwner" ShowInTaskbar="False" Style="{StaticResource {x:Type Window}}" Closing="Window_Closing">
+ <DockPanel Margin="12" Background="#F0F0F0">
+  <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,8,0,0">
+   <Button x:Name="SaveButton" Content="保存" IsDefault="True" IsEnabled="False" Click="Save_Click" MinWidth="72" />
+   <Button x:Name="CloseButton" Content="閉じる" IsCancel="True" MinWidth="72" />
+  </StackPanel>
+  <StackPanel>
+   <TextBlock Text="デバイス" Margin="0,0,0,4" />
+   <ComboBox x:Name="DevicePicker" DisplayMemberPath="Label" SelectionChanged="Device_Changed" />
+   <TextBlock Text="新しいID" Margin="0,8,0,4" />
+   <TextBox x:Name="SerialBox" IsEnabled="False" TextChanged="Serial_Changed" />
+   <TextBlock x:Name="LimitText" Margin="0,4,0,0" />
+   <TextBlock x:Name="MessageText" Text="デバイス一覧を取得しています…" TextWrapping="Wrap" Margin="0,6,0,0" />
+  </StackPanel>
+ </DockPanel>
+</Window>

@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 340" role="img" aria-labelledby="title desc">
+  <title id="title">All clients share one tuned bandwidth</title>
+  <desc id="desc">A single RTL-SDR sends the same IQ stream to two receiver applications. Both clients share its center frequency and captured bandwidth.</desc>
+  <defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0 0L10 5L0 10z" fill="#3274aa"/></marker></defs>
+  <rect width="1000" height="340" rx="20" fill="#f4f7fb"/><g font-family="system-ui,'Segoe UI',sans-serif" text-anchor="middle" fill="#20364b">
+  <rect x="70" y="112" width="220" height="110" rx="16" fill="#fff" stroke="#94abc1" stroke-width="2"/><text x="180" y="157" font-size="21" font-weight="700">One RTL-SDR</text><text x="180" y="190" font-size="16">One center frequency</text>
+  <rect x="410" y="112" width="180" height="110" rx="16" fill="#eaf4ff" stroke="#2873b5" stroke-width="2"/><text x="500" y="157" font-size="21" font-weight="700">RTL-TCP-CAST</text><text x="500" y="190" font-size="16">Same IQ stream</text>
+  <rect x="710" y="54" width="220" height="90" rx="16" fill="#fff" stroke="#9cabb9" stroke-width="2"/><text x="820" y="108" font-size="18" font-weight="700">Receiver app A</text>
+  <rect x="710" y="196" width="220" height="90" rx="16" fill="#fff" stroke="#9cabb9" stroke-width="2"/><text x="820" y="250" font-size="18" font-weight="700">Receiver app B</text>
+  <g fill="none" stroke="#3274aa" stroke-width="4" marker-end="url(#arrow)"><path d="M290 167H400"/><path d="M590 155C640 155 650 99 700 99"/><path d="M590 180C640 180 650 241 700 241"/></g>
+  <text x="500" y="320" font-size="16" font-weight="700">Retuning the dongle moves the captured band for every client.</text>
+  </g></svg>

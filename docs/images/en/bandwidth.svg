@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 260" role="img" aria-labelledby="title desc">
+  <title id="title">RTL-SDR capture bandwidth at 2.4 MS/s</title>
+  <desc id="desc">A 2.4 megasample-per-second capture centered at 355 megahertz spans approximately 353.8 to 356.2 megahertz, within the wider 350 to 360 megahertz range.</desc>
+  <rect width="1000" height="260" rx="20" fill="#f4f7fb"/><g font-family="system-ui,'Segoe UI',sans-serif" fill="#20364b">
+  <text x="500" y="38" text-anchor="middle" font-size="20" font-weight="700">One 2.4 MS/s capture: approximately 2.4 MHz wide</text>
+  <line x1="100" y1="145" x2="900" y2="145" stroke="#9aabba" stroke-width="8" stroke-linecap="round"/>
+  <rect x="404" y="102" width="192" height="86" rx="14" fill="#d9ecff" stroke="#2675b8" stroke-width="3"/>
+  <line x1="500" y1="88" x2="500" y2="202" stroke="#1768a8" stroke-width="3"/>
+  <g text-anchor="middle" font-size="16"><text x="100" y="222">350 MHz</text><text x="404" y="222">353.8 MHz</text><text x="500" y="82" font-weight="700">Center 355 MHz</text><text x="596" y="222">356.2 MHz</text><text x="900" y="222">360 MHz</text></g>
+  <text x="500" y="151" text-anchor="middle" font-size="16" font-weight="700" fill="#18598e">Captured slice</text>
+  </g></svg>
