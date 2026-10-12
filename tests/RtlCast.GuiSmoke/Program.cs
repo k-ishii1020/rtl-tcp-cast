@@ -287,7 +287,8 @@ internal static class Program
         Assert(WorkspaceSettingsStore.Load(guiSettingsDirectory).Sessions[0].ListenPort == 12000, "Invalid edit preserves last valid settings");
         Find<TextBox>("ListenPortBox").Text = "11234";
         await Until(() => WorkspaceSettingsStore.Load(guiSettingsDirectory).Sessions[0].ListenPort == 11234);
-        Find<RadioButton>("ManagedControlRadio").IsChecked = true;
+        foreach (var name in new[] { "LockFrequencyBox", "LockPpmBox", "LockGainBox", "LockSampleRateBox" })
+            Find<CheckBox>(name).IsChecked = true;
         Find<CheckBox>("AutoGainBox").IsChecked = false;
         Find<TextBox>("PpmBox").Text = "0";
         Find<TextBox>("GainBox").Text = "0";
@@ -310,7 +311,8 @@ internal static class Program
         Find<TextBox>("GainBox").Text = "0";
         Find<CheckBox>("AutoGainBox").IsChecked = true;
         Assert(!Find<RepeatButton>("GainUpButton").IsEnabled, "Auto gain disables spinner");
-        Find<RadioButton>("ClientControlRadio").IsChecked = true;
+        foreach (var name in new[] { "LockFrequencyBox", "LockPpmBox", "LockGainBox", "LockSampleRateBox" })
+            Find<CheckBox>(name).IsChecked = false;
         Assert(FindApp<TextBlock>("ApplicationStatusIndicator").Text == "■" && FindApp<TextBlock>("ApplicationStatusIndicator").Foreground == Brushes.Firebrick,
             "Stopped application status indicator");
         Assert(clients.ActualHeight > Find<TextBox>("LogBox").ActualHeight, "Connected apps area receives more vertical space than the log");
@@ -378,27 +380,44 @@ internal static class Program
         await source.GetStream().ReadExactlyAsync(command, timeout.Token);
         Assert(command[0] == 5 && System.Buffers.Binary.BinaryPrimitives.ReadInt32BigEndian(command.AsSpan(1, 4)) == -12,
             "Client PPM command reaches upstream");
-        Find<TextBox>("FrequencyBox").Text = "145.5";
-        Find<TextBox>("PpmBox").Text = "-21";
-        Find<TextBox>("GainBox").Text = "14.3";
-        Find<CheckBox>("AutoGainBox").IsChecked = false;
-        Find<RadioButton>("ManagedControlRadio").IsChecked = true;
+        await b.GetStream().WriteAsync(new byte[] { 1, 8, 172, 39, 96 }); // 145.5 MHz
+        await source.GetStream().ReadExactlyAsync(command, timeout.Token);
+        await b.GetStream().WriteAsync(new byte[] { 2, 0, 15, 160, 0 }); // 1.024 MS/s
+        await source.GetStream().ReadExactlyAsync(command, timeout.Token);
+        await b.GetStream().WriteAsync(new byte[] { 5, 255, 255, 255, 235 }); // -21 ppm
+        await source.GetStream().ReadExactlyAsync(command, timeout.Token);
+        await b.GetStream().WriteAsync(new byte[] { 3, 1, 0, 0, 0 }.Concat(new byte[] { 4, 0, 0, 0, 143 }).ToArray());
+        await source.GetStream().ReadExactlyAsync(new byte[10], timeout.Token);
+        await Until(() => Find<TextBox>("FrequencyBox").Text == "145.5" &&
+            Find<TextBox>("PpmBox").Text == "-21" && Find<TextBox>("GainBox").Text == "14.3" &&
+            Find<CheckBox>("AutoGainBox").IsChecked == false && Find<ComboBox>("SampleRateBox").SelectedItem?.ToString() == "1.024");
+        Assert(!Find<TextBox>("FrequencyBox").IsEnabled && !Find<TextBox>("PpmBox").IsEnabled &&
+            !Find<TextBox>("GainBox").IsEnabled && !Find<ComboBox>("SampleRateBox").IsEnabled,
+            "Unlocked setting fields reflect client values while disabled");
+        foreach (var name in new[] { "LockFrequencyBox", "LockPpmBox", "LockGainBox", "LockSampleRateBox" })
+            Find<CheckBox>(name).IsChecked = true;
         var managed = new byte[30];
         await source.GetStream().ReadExactlyAsync(managed, timeout.Token);
         Assert(managed[0] == 1 && System.Buffers.Binary.BinaryPrimitives.ReadUInt32BigEndian(managed.AsSpan(1, 4)) == 145_500_000,
             "GUI managed frequency reaches upstream");
+        Assert(managed[5] == 2 && System.Buffers.Binary.BinaryPrimitives.ReadUInt32BigEndian(managed.AsSpan(6, 4)) == 1_024_000,
+            "GUI managed sample rate reaches upstream");
         Assert(managed[10] == 5 && System.Buffers.Binary.BinaryPrimitives.ReadInt32BigEndian(managed.AsSpan(11, 4)) == -21,
             "GUI signed PPM reaches upstream");
-        Assert(managed[25] == 4 && System.Buffers.Binary.BinaryPrimitives.ReadInt32BigEndian(managed.AsSpan(26, 4)) == 143,
+        Assert(managed[20] == 3 && managed[25] == 4 && System.Buffers.Binary.BinaryPrimitives.ReadInt32BigEndian(managed.AsSpan(26, 4)) == 143,
             "GUI gain uses tenths of dB");
-        await Until(() => !WorkspaceSettingsStore.Load(guiSettingsDirectory).Sessions[0].AcceptClientCommands &&
+        await Until(() => WorkspaceSettingsStore.Load(guiSettingsDirectory).Sessions[0].LockCenterFrequency &&
+            WorkspaceSettingsStore.Load(guiSettingsDirectory).Sessions[0].LockPpm &&
+            WorkspaceSettingsStore.Load(guiSettingsDirectory).Sessions[0].LockGain &&
+            WorkspaceSettingsStore.Load(guiSettingsDirectory).Sessions[0].LockSampleRate &&
             WorkspaceSettingsStore.Load(guiSettingsDirectory).Sessions[0].GainTenthsDb == 143);
         Assert(Find<TextBox>("FrequencyBox").IsEnabled, "Managed controls editable while streaming");
         Capture(window, screenshotDirectory, "managed-control.png");
         Find<TextBox>("FrequencyBox").Text = "144";
         await source.GetStream().ReadExactlyAsync(managed, timeout.Token);
         Assert(System.Buffers.Binary.BinaryPrimitives.ReadUInt32BigEndian(managed.AsSpan(1, 4)) == 144_000_000, "Live tuning edit");
-        Find<RadioButton>("ClientControlRadio").IsChecked = true;
+        foreach (var name in new[] { "LockFrequencyBox", "LockPpmBox", "LockGainBox", "LockSampleRateBox" })
+            Find<CheckBox>(name).IsChecked = false;
         await Until(() => WorkspaceSettingsStore.Load(guiSettingsDirectory).Sessions[0].AcceptClientCommands);
         Assert(!Find<TextBox>("FrequencyBox").IsEnabled, "Client control disables local tuning");
         await source.GetStream().WriteAsync(new byte[] { 12, 13 });

@@ -2,12 +2,18 @@
 # Copyright (c) 2026 いしかず
 param(
     [string]$DotnetPath = 'dotnet',
-    [string]$PublishDirectory = 'artifacts/RTL-TCP-Cast-win-x64'
+    [string]$PublishDirectory
 )
 $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path -Parent $PSScriptRoot
 Push-Location $repoRoot
 try {
+    if ([string]::IsNullOrWhiteSpace($PublishDirectory)) {
+        $versionProps = [xml](Get-Content -LiteralPath (Join-Path $repoRoot 'Directory.Build.props') -Raw)
+        $version = [string]($versionProps.Project.PropertyGroup.Version | Select-Object -First 1)
+        if ([string]::IsNullOrWhiteSpace($version)) { throw 'Version not found in Directory.Build.props.' }
+        $PublishDirectory = "artifacts/RTL-TCP-Cast-win-x64-v$version"
+    }
     $runtimeConfigPath = Join-Path $PublishDirectory 'RTL-TCP-Cast.runtimeconfig.json'
     if (!(Test-Path -LiteralPath $runtimeConfigPath)) {
         # Single-file publish bundles the runtime config into RTL-TCP-Cast.exe.

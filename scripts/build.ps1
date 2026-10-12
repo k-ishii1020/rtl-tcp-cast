@@ -12,7 +12,11 @@ try {
     & $DotnetPath run --project tests/RtlCast.GuiSmoke -c Release --no-build
     if ($LASTEXITCODE -ne 0) { throw 'GUI smoke test failed.' }
     if ($Publish) {
-        $publishDirectory = [IO.Path]::GetFullPath((Join-Path $repoRoot 'artifacts/RTL-TCP-Cast-win-x64'))
+        $versionProps = [xml](Get-Content -LiteralPath (Join-Path $repoRoot 'Directory.Build.props') -Raw)
+        $version = [string]($versionProps.Project.PropertyGroup.Version | Select-Object -First 1)
+        if ([string]::IsNullOrWhiteSpace($version)) { throw 'Version not found in Directory.Build.props.' }
+        $publishDirectoryName = "RTL-TCP-Cast-win-x64-v$version"
+        $publishDirectory = [IO.Path]::GetFullPath((Join-Path $repoRoot "artifacts/$publishDirectoryName"))
         $artifactRoot = [IO.Path]::GetFullPath((Join-Path $repoRoot 'artifacts')).TrimEnd([IO.Path]::DirectorySeparatorChar) + [IO.Path]::DirectorySeparatorChar
         if (!$publishDirectory.StartsWith($artifactRoot, [StringComparison]::OrdinalIgnoreCase)) {
             throw "Publish output must stay under artifacts: $publishDirectory"

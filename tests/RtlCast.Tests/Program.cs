@@ -80,9 +80,10 @@ static async Task ManagedControl()
     using var mock = new MockUpstream();
     await using var relay = new RelayServer();
     var settings = Options(mock.Port) with { AcceptClientCommands = false,
+        LockCenterFrequency = true, LockPpm = true, LockGain = true, LockSampleRate = true,
         CenterFrequency = 145_500_000, Ppm = -17, AutomaticGain = false, GainTenthsDb = 143 };
     var blocked = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-    relay.Logged += log => { if (log.Message.StartsWith("クライアント操作ロック中のため")) blocked.TrySetResult(); };
+    relay.Logged += log => { if (log.Message.Contains("（ロック中）", StringComparison.Ordinal)) blocked.TrySetResult(); };
     await relay.StartAsync(settings);
     var source = await mock.Accept();
     await mock.SendHeader(source);
@@ -109,13 +110,18 @@ static async Task ManagedControl()
     await mock.SendHeader(next);
     await CheckManaged(next, 144_000_000, 12, -10);
     await Until(() => relay.GetSnapshot().Status == RelayStatus.Streaming);
-    await relay.ConfigureControlAsync(settings with { AcceptClientCommands = true });
+    var unlocked = settings with { AcceptClientCommands = true,
+        LockCenterFrequency = false, LockPpm = false, LockGain = false, LockSampleRate = false };
+    await relay.ConfigureControlAsync(unlocked);
     using var newClient = await Connect(relay);
     await newClient.GetStream().WriteAsync(Command(1, 100));
     Assert((await Read(next, 5)).SequenceEqual(Command(1, 100)), "Switch back enables clients");
-    await relay.ConfigureControlAsync(settings with { AutomaticGain = true });
-    var auto = await Read(next, 25);
-    Assert(auto.AsSpan(20).SequenceEqual(Command(3, 0)), "Auto gain command and no manual gain");
+    await newClient.GetStream().WriteAsync(Command(3, 0));
+    Assert((await Read(next, 5)).SequenceEqual(Command(3, 0)), "Client can select automatic gain");
+    await relay.ConfigureControlAsync(unlocked with { LockGain = true, AutomaticGain = true });
+    var auto = await Read(next, 10);
+    Assert(auto.AsSpan(0, 5).SequenceEqual(Command(8, 0)) && auto.AsSpan(5).SequenceEqual(Command(3, 0)),
+        "Auto gain command and no manual gain");
     Assert(relay.GetSnapshot().RequestedAutomaticGain == true && relay.GetSnapshot().RequestedGainTenthsDb == null, "Auto gain snapshot");
     await relay.StopAsync();
     Assert(relay.GetSnapshot().RequestedAutomaticGain == null && relay.GetSnapshot().RequestedGainTenthsDb == null, "Stopped gain unknown");
