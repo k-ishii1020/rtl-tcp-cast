@@ -40,6 +40,7 @@ public partial class SessionView : System.Windows.Controls.UserControl
     private SessionPhase phase = SessionPhase.Stopped;
     private bool closing;
     private bool cancelStartRequested;
+    private bool updatingFromDeviceSettings;
     private RelayOptions activeOptions = new();
     private readonly Func<string> executablePath;
     private readonly Action<SessionView, AppSettings> save;
@@ -122,18 +123,18 @@ public partial class SessionView : System.Windows.Controls.UserControl
             box.Checked += (_, _) => { UpdateTuning(); QueueSettingsSave(); };
             box.Unchecked += (_, _) => { UpdateTuning(); QueueSettingsSave(); };
         }
-        AutoGainBox.Checked += (_, _) => { UpdateTuning(); QueueSettingsSave(); };
-        AutoGainBox.Unchecked += (_, _) => { UpdateTuning(); QueueSettingsSave(); };
+        AutoGainBox.Checked += (_, _) => { UpdateTuning(); if (!updatingFromDeviceSettings) QueueSettingsSave(); };
+        AutoGainBox.Unchecked += (_, _) => { UpdateTuning(); if (!updatingFromDeviceSettings) QueueSettingsSave(); };
         UpdateTuning();
         settingsTimer.Tick += async (_, _) => { settingsTimer.Stop(); await SaveSettingsAutomaticallyAsync(); };
         foreach (var box in new[] { HostBox, UpstreamPortBox, ListenPortBox, FrequencyBox, PpmBox, GainBox })
-            box.TextChanged += (_, _) => QueueSettingsSave();
+            box.TextChanged += (_, _) => { if (!updatingFromDeviceSettings) QueueSettingsSave(); };
         SessionNameText.TextChanged += (_, _) =>
         {
             SessionNameChanged?.Invoke(SessionNameText.Text.Trim());
             QueueSettingsSave();
         };
-        SampleRateBox.SelectionChanged += (_, _) => QueueSettingsSave();
+        SampleRateBox.SelectionChanged += (_, _) => { if (!updatingFromDeviceSettings) QueueSettingsSave(); };
         DeviceBox.AddHandler(System.Windows.Controls.Primitives.TextBoxBase.TextChangedEvent, new System.Windows.Controls.TextChangedEventHandler((_, _) =>
         {
             QueueSettingsSave();
@@ -541,6 +542,7 @@ public partial class SessionView : System.Windows.Controls.UserControl
     private void Refresh()
     {
         var snapshot = relay.GetSnapshot();
+        ReflectUnlockedSettings(snapshot);
         var gain = snapshot.RequestedAutomaticGain == true ? "自動"
             : snapshot.RequestedGainTenthsDb is int gainTenths
                 ? $"{(gainTenths / 10m).ToString("0.#", CultureInfo.InvariantCulture)} dB"
@@ -584,6 +586,32 @@ public partial class SessionView : System.Windows.Controls.UserControl
             updated = true;
         }
         if (updated) { LogBox.Text = string.Join(Environment.NewLine, logLines); LogBox.ScrollToEnd(); }
+    }
+
+    private void ReflectUnlockedSettings(RelaySnapshot snapshot)
+    {
+        updatingFromDeviceSettings = true;
+        try
+        {
+            if (LockFrequencyBox.IsChecked != true && snapshot.RequestedFrequency is uint frequency)
+                FrequencyBox.Text = (frequency / 1_000_000m).ToString("0.######", CultureInfo.InvariantCulture);
+            if (LockPpmBox.IsChecked != true && snapshot.RequestedPpm is int ppm)
+                PpmBox.Text = ppm.ToString(CultureInfo.InvariantCulture);
+            if (LockGainBox.IsChecked != true)
+            {
+                if (snapshot.RequestedAutomaticGain is bool automaticGain)
+                    AutoGainBox.IsChecked = automaticGain;
+                if (snapshot.RequestedGainTenthsDb is int gainTenthsDb)
+                    GainBox.Text = (gainTenthsDb / 10m).ToString("0.#", CultureInfo.InvariantCulture);
+            }
+            if (LockSampleRateBox.IsChecked != true && snapshot.RequestedSampleRate is uint sampleRate)
+            {
+                var rate = (sampleRate / 1_000_000m).ToString("0.######", CultureInfo.InvariantCulture);
+                if (!SampleRateBox.Items.Contains(rate)) SampleRateBox.Items.Add(rate);
+                SampleRateBox.SelectedItem = rate;
+            }
+        }
+        finally { updatingFromDeviceSettings = false; }
     }
 
     private static string FormatRate(double bytes) => $"{bytes / 1_000_000:F2} MB/s";
