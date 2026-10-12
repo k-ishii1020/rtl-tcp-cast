@@ -46,6 +46,10 @@ public static class SettingsStore
             $"PreferredLocalAddress={Text(settings.PreferredLocalAddress)}",
             $"AutoReconnect={settings.AutoReconnect.ToString().ToLowerInvariant()}", "", "[SDR]",
             $"AcceptClientCommands={settings.AcceptClientCommands.ToString().ToLowerInvariant()}",
+            $"LockCenterFrequency={settings.LockCenterFrequency.ToString().ToLowerInvariant()}",
+            $"LockPpm={settings.LockPpm.ToString().ToLowerInvariant()}",
+            $"LockGain={settings.LockGain.ToString().ToLowerInvariant()}",
+            $"LockSampleRate={settings.LockSampleRate.ToString().ToLowerInvariant()}",
             $"CenterFrequency={settings.CenterFrequency}", $"Ppm={settings.Ppm}",
             $"AutomaticGain={settings.AutomaticGain.ToString().ToLowerInvariant()}",
             $"GainTenthsDb={settings.GainTenthsDb}", $"ManagedSampleRate={settings.ManagedSampleRate}", "", "[Advanced]",
@@ -100,9 +104,17 @@ public static class SettingsStore
             return TimeSpan.FromSeconds(seconds);
         }
         var defaults = new AppSettings();
+        var legacyClientControl = Flag("SDR.AcceptClientCommands", defaults.AcceptClientCommands);
+        var hasLockSettings = new[] { "SDR.LockCenterFrequency", "SDR.LockPpm", "SDR.LockGain", "SDR.LockSampleRate" }
+            .Any(values.ContainsKey);
+        var legacyLockDefault = !hasLockSettings && !legacyClientControl;
         var settings = defaults with
         {
-            AcceptClientCommands = Flag("SDR.AcceptClientCommands", defaults.AcceptClientCommands),
+            AcceptClientCommands = legacyClientControl,
+            LockCenterFrequency = Flag("SDR.LockCenterFrequency", legacyLockDefault),
+            LockPpm = Flag("SDR.LockPpm", legacyLockDefault),
+            LockGain = Flag("SDR.LockGain", legacyLockDefault),
+            LockSampleRate = Flag("SDR.LockSampleRate", legacyLockDefault),
             CenterFrequency = Unsigned("SDR.CenterFrequency", defaults.CenterFrequency),
             Ppm = Number("SDR.Ppm", defaults.Ppm),
             AutomaticGain = Flag("SDR.AutomaticGain", defaults.AutomaticGain),

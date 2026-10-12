@@ -58,41 +58,72 @@
   </GroupBox>
   <GroupBox Grid.Row="3" Header="SDRデバイス設定">
    <StackPanel x:Name="SdrPanel">
-    <StackPanel Orientation="Horizontal" Margin="0,0,0,2">
-     <RadioButton x:Name="ClientControlRadio" Content="クライアントの操作をすべて受け入れる" IsChecked="True" Margin="0,0,12,0" />
-     <RadioButton x:Name="ManagedControlRadio" Content="クライアント操作ロック" />
-    </StackPanel>
-    <WrapPanel x:Name="TuningPanel" IsEnabled="False" TextElement.FontSize="11">
-     <TextBlock Text="中心周波数" VerticalAlignment="Center" Margin="0,0,4,0" />
-     <TextBox x:Name="FrequencyBox" Text="100" Width="78" AutomationProperties.Name="中心周波数 MHz" />
-     <TextBlock Text="MHz" VerticalAlignment="Center" Margin="3,0,4,0" />
-     <TextBlock Text="周波数補正(PPM)" VerticalAlignment="Center" Margin="0,0,4,0" />
-     <DockPanel PreviewMouseWheel="Ppm_MouseWheel">
+    <Grid TextElement.FontSize="11">
+     <Grid.ColumnDefinitions><ColumnDefinition Width="145" /><ColumnDefinition Width="*" /><ColumnDefinition Width="92" /></Grid.ColumnDefinitions>
+     <TextBlock Text="設定項目" Foreground="#555555" Margin="2,0,0,3" />
+     <TextBlock Grid.Column="1" Text="設定値" Foreground="#555555" Margin="2,0,0,3" />
+     <TextBlock Grid.Column="2" Text="クライアント操作ロック" Foreground="#555555" HorizontalAlignment="Center" Margin="0,0,0,3" />
+    </Grid>
+    <Grid x:Name="TuningPanel" TextElement.FontSize="11">
+     <Grid.ColumnDefinitions><ColumnDefinition Width="145" /><ColumnDefinition Width="*" /><ColumnDefinition Width="92" /></Grid.ColumnDefinitions>
+     <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
+     <TextBlock Text="中心周波数" VerticalAlignment="Center" Margin="2" />
+     <Grid Grid.Column="1" Margin="2">
+      <Grid.ColumnDefinitions><ColumnDefinition Width="92" /><ColumnDefinition Width="36" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+      <DockPanel x:Name="FrequencyInput" Grid.Column="0" Width="92" HorizontalAlignment="Left" PreviewMouseWheel="Frequency_MouseWheel">
+       <StackPanel DockPanel.Dock="Right">
+        <RepeatButton x:Name="FrequencyUpButton" Content="▲" Style="{StaticResource SpinButton}" Click="FrequencyUp_Click" AutomationProperties.Name="中心周波数を6.25 kHz増やす" />
+        <RepeatButton x:Name="FrequencyDownButton" Content="▼" Style="{StaticResource SpinButton}" Click="FrequencyDown_Click" AutomationProperties.Name="中心周波数を6.25 kHz減らす" />
+       </StackPanel>
+       <TextBox x:Name="FrequencyBox" Text="100" Width="78" PreviewKeyDown="Frequency_KeyDown" AutomationProperties.Name="中心周波数 MHz" />
+      </DockPanel>
+      <TextBlock Grid.Column="1" Text="MHz" VerticalAlignment="Center" Margin="4,0,0,0" />
+     </Grid>
+     <CheckBox x:Name="LockFrequencyBox" Grid.Column="2" HorizontalAlignment="Center" VerticalAlignment="Center" AutomationProperties.Name="中心周波数のクライアント操作ロック" />
+     <TextBlock Grid.Row="1" Text="周波数補正" VerticalAlignment="Center" Margin="2" />
+     <Grid Grid.Row="1" Grid.Column="1" Margin="2">
+      <Grid.ColumnDefinitions><ColumnDefinition Width="92" /><ColumnDefinition Width="36" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+      <DockPanel x:Name="PpmInput" Grid.Column="0" Width="92" HorizontalAlignment="Left" PreviewMouseWheel="Ppm_MouseWheel">
       <StackPanel DockPanel.Dock="Right">
        <RepeatButton x:Name="PpmUpButton" Content="▲" Style="{StaticResource SpinButton}" Click="PpmUp_Click" AutomationProperties.Name="周波数補正を1増やす" />
        <RepeatButton x:Name="PpmDownButton" Content="▼" Style="{StaticResource SpinButton}" Click="PpmDown_Click" AutomationProperties.Name="周波数補正を1減らす" />
       </StackPanel>
-      <TextBox x:Name="PpmBox" Text="0" Width="38" PreviewKeyDown="Ppm_KeyDown" AutomationProperties.Name="周波数補正(PPM)" />
-     </DockPanel>
-     <TextBlock Text="Gain" VerticalAlignment="Center" Margin="8,0,4,0" />
-     <CheckBox x:Name="AutoGainBox" Content="自動" IsChecked="True" VerticalAlignment="Center" Margin="0,0,4,0" />
-     <DockPanel x:Name="GainInput" IsEnabled="False" PreviewMouseWheel="Gain_MouseWheel">
-      <StackPanel DockPanel.Dock="Right">
-       <RepeatButton x:Name="GainUpButton" Content="▲" Style="{StaticResource SpinButton}" Click="GainUp_Click" AutomationProperties.Name="Gainを1 dB増やす" />
-       <RepeatButton x:Name="GainDownButton" Content="▼" Style="{StaticResource SpinButton}" Click="GainDown_Click" AutomationProperties.Name="Gainを1 dB減らす" />
-      </StackPanel>
-      <TextBox x:Name="GainBox" Text="0" Width="42" PreviewKeyDown="Gain_KeyDown" AutomationProperties.Name="Gain dB" />
-     </DockPanel>
-     <TextBlock Text="dB" VerticalAlignment="Center" Margin="3,0,4,0" />
-     <TextBlock Text="サンプルレート" VerticalAlignment="Center" Margin="0,0,4,0" />
-     <ComboBox x:Name="SampleRateBox" Width="62" IsEditable="False" AutomationProperties.Name="サンプルレート MS/s" />
-     <TextBlock Text="MS/s" VerticalAlignment="Center" Margin="3,0,0,0" />
-    </WrapPanel>
+      <TextBox x:Name="PpmBox" Text="0" Width="78" PreviewKeyDown="Ppm_KeyDown" AutomationProperties.Name="周波数補正 ppm" />
+      </DockPanel>
+      <TextBlock Grid.Column="1" Text="ppm" VerticalAlignment="Center" Margin="4,0,0,0" />
+     </Grid>
+     <CheckBox x:Name="LockPpmBox" Grid.Row="1" Grid.Column="2" HorizontalAlignment="Center" VerticalAlignment="Center" AutomationProperties.Name="周波数補正 ppm のクライアント操作ロック" />
+     <TextBlock Grid.Row="2" Text="Gain" VerticalAlignment="Center" Margin="2" />
+     <Grid Grid.Row="2" Grid.Column="1" Margin="2">
+      <Grid.ColumnDefinitions><ColumnDefinition Width="92" /><ColumnDefinition Width="36" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+      <DockPanel x:Name="GainInput" Grid.Column="0" Width="92" HorizontalAlignment="Left" PreviewMouseWheel="Gain_MouseWheel">
+       <StackPanel DockPanel.Dock="Right">
+        <RepeatButton x:Name="GainUpButton" Content="▲" Style="{StaticResource SpinButton}" Click="GainUp_Click" AutomationProperties.Name="Gainを1 dB増やす" />
+        <RepeatButton x:Name="GainDownButton" Content="▼" Style="{StaticResource SpinButton}" Click="GainDown_Click" AutomationProperties.Name="Gainを1 dB減らす" />
+       </StackPanel>
+       <TextBox x:Name="GainBox" Text="0" Width="78" PreviewKeyDown="Gain_KeyDown" AutomationProperties.Name="Gain dB" />
+      </DockPanel>
+      <TextBlock Grid.Column="1" Text="dB" VerticalAlignment="Center" Margin="4,0,0,0" />
+      <CheckBox x:Name="AutoGainBox" Grid.Column="2" Content="自動" IsChecked="True" VerticalAlignment="Center" Margin="8,0,0,0" />
+     </Grid>
+     <CheckBox x:Name="LockGainBox" Grid.Row="2" Grid.Column="2" HorizontalAlignment="Center" VerticalAlignment="Center" AutomationProperties.Name="Gainのクライアント操作ロック" />
+     <TextBlock Grid.Row="3" Text="サンプルレート" VerticalAlignment="Center" Margin="2" />
+     <Grid Grid.Row="3" Grid.Column="1" Margin="2">
+      <Grid.ColumnDefinitions><ColumnDefinition Width="92" /><ColumnDefinition Width="36" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+      <ComboBox x:Name="SampleRateBox" Grid.Column="0" Width="92" HorizontalAlignment="Left" IsEditable="False" AutomationProperties.Name="サンプルレート MS/s" />
+      <TextBlock Grid.Column="1" Text="MS/s" VerticalAlignment="Center" Margin="4,0,0,0" />
+     </Grid>
+     <CheckBox x:Name="LockSampleRateBox" Grid.Row="3" Grid.Column="2" HorizontalAlignment="Center" VerticalAlignment="Center" AutomationProperties.Name="サンプルレートのクライアント操作ロック" />
+    </Grid>
    </StackPanel>
   </GroupBox>
-  <GroupBox Grid.Row="4" Header="現在の設定値">
-   <TextBlock x:Name="CurrentSettingsText" Text="RTL-TCPから設定値を取得すると表示します。"
-              Margin="4,2" TextWrapping="Wrap" />
+  <GroupBox Grid.Row="4" Header="現在のSDRデバイス設定値">
+   <StackPanel Margin="4,2">
+    <TextBlock x:Name="CurrentSettingsText" Text="RTL-TCPから設定値を取得すると表示します。"
+               TextWrapping="Wrap" />
+    <TextBlock Text="※クライアントアプリによっては周波数補正(ppm)機能を使用せず、中心周波数を直接調整しているものもあります。"
+               Margin="0,3,0,0" FontSize="10" Foreground="#777777" TextWrapping="Wrap" />
+   </StackPanel>
   </GroupBox>
   <GroupBox Grid.Row="5" Header="接続アプリ">
    <DockPanel LastChildFill="True">

@@ -20,6 +20,7 @@ namespace RtlCast.App;
 public partial class SessionView : System.Windows.Controls.UserControl
 {
     private enum SessionPhase { Stopped, Starting, Running, Stopping, Faulted, Closed }
+    private const decimal FrequencyStepHz = 6_250m;
 
     private readonly RelayServer relay = new();
     private readonly RtlTcpProcess localTcp = new();
@@ -92,8 +93,10 @@ public partial class SessionView : System.Windows.Controls.UserControl
             UpstreamPortBox.Text = saved.UpstreamPort.ToString();
             ListenPortBox.Text = saved.ListenPort.ToString();
             ReconnectBox.IsChecked = saved.AutoReconnect;
-            ClientControlRadio.IsChecked = saved.AcceptClientCommands;
-            ManagedControlRadio.IsChecked = !saved.AcceptClientCommands;
+            LockFrequencyBox.IsChecked = saved.LockCenterFrequency;
+            LockPpmBox.IsChecked = saved.LockPpm;
+            LockGainBox.IsChecked = saved.LockGain;
+            LockSampleRateBox.IsChecked = saved.LockSampleRate;
             FrequencyBox.Text = (saved.CenterFrequency / 1_000_000m).ToString(CultureInfo.InvariantCulture);
             PpmBox.Text = saved.Ppm.ToString();
             AutoGainBox.IsChecked = saved.AutomaticGain;
@@ -114,11 +117,14 @@ public partial class SessionView : System.Windows.Controls.UserControl
         LocalSourceRadio.Checked += (_, _) => UpdateSource();
         RemoteSourceRadio.Checked += (_, _) => UpdateSource();
         UpdateSource();
-        UpdateTuning();
-        ClientControlRadio.Checked += (_, _) => { UpdateTuning(); QueueSettingsSave(); };
-        ManagedControlRadio.Checked += (_, _) => { UpdateTuning(); QueueSettingsSave(); };
+        foreach (var box in new[] { LockFrequencyBox, LockPpmBox, LockGainBox, LockSampleRateBox })
+        {
+            box.Checked += (_, _) => { UpdateTuning(); QueueSettingsSave(); };
+            box.Unchecked += (_, _) => { UpdateTuning(); QueueSettingsSave(); };
+        }
         AutoGainBox.Checked += (_, _) => { UpdateTuning(); QueueSettingsSave(); };
         AutoGainBox.Unchecked += (_, _) => { UpdateTuning(); QueueSettingsSave(); };
+        UpdateTuning();
         settingsTimer.Tick += async (_, _) => { settingsTimer.Stop(); await SaveSettingsAutomaticallyAsync(); };
         foreach (var box in new[] { HostBox, UpstreamPortBox, ListenPortBox, FrequencyBox, PpmBox, GainBox })
             box.TextChanged += (_, _) => QueueSettingsSave();
@@ -156,9 +162,6 @@ public partial class SessionView : System.Windows.Controls.UserControl
         var remoteSelected = RemoteSourceRadio.IsChecked == true;
         if (localSelected == remoteSelected) throw new ArgumentException("受信元を選択してください。");
         var local = localSelected;
-        var clientControlSelected = ClientControlRadio.IsChecked == true;
-        var managedControlSelected = ManagedControlRadio.IsChecked == true;
-        if (clientControlSelected == managedControlSelected) throw new ArgumentException("RTL-SDRの操作権限を選択してください。");
         if (!int.TryParse(ListenPortBox.Text, out var listenPort))
             throw new ArgumentException("ポート番号は1～65535の整数で入力してください。");
         if (!int.TryParse(UpstreamPortBox.Text, out var upstreamPort))
@@ -186,7 +189,12 @@ public partial class SessionView : System.Windows.Controls.UserControl
             ListenAddress = LanBox.IsChecked == true ? "0.0.0.0" : "127.0.0.1", ListenPort = listenPort,
             AutoReconnect = ReconnectBox.IsChecked == true,
             UseLocalRtlTcp = local, RtlTcpPath = executablePath(), DeviceIdentifier = SelectedDeviceIdentifier(),
-            AcceptClientCommands = clientControlSelected,
+            LockCenterFrequency = LockFrequencyBox.IsChecked == true,
+            LockPpm = LockPpmBox.IsChecked == true,
+            LockGain = LockGainBox.IsChecked == true,
+            LockSampleRate = LockSampleRateBox.IsChecked == true,
+            AcceptClientCommands = !(LockFrequencyBox.IsChecked == true && LockPpmBox.IsChecked == true &&
+                LockGainBox.IsChecked == true && LockSampleRateBox.IsChecked == true),
             CenterFrequency = Megahertz(FrequencyBox.Text, "中心周波数"), Ppm = ppm,
             AutomaticGain = AutoGainBox.IsChecked == true, GainTenthsDb = (int)(gain * 10),
             ManagedSampleRate = Megahertz(SampleRateBox.SelectedItem?.ToString() ?? "", "サンプルレート")
@@ -413,13 +421,32 @@ public partial class SessionView : System.Windows.Controls.UserControl
         {
             if (closing || busy) return;
             var settings = ReadOptions();
-            if (running && (settings.AcceptClientCommands != activeOptions.AcceptClientCommands ||
+            if (running && (settings.LockCenterFrequency != activeOptions.LockCenterFrequency ||
+                settings.LockPpm != activeOptions.LockPpm || settings.LockGain != activeOptions.LockGain ||
+                settings.LockSampleRate != activeOptions.LockSampleRate ||
                 settings.CenterFrequency != activeOptions.CenterFrequency || settings.Ppm != activeOptions.Ppm ||
                 settings.AutomaticGain != activeOptions.AutomaticGain || settings.GainTenthsDb != activeOptions.GainTenthsDb ||
                 settings.ManagedSampleRate != activeOptions.ManagedSampleRate))
             {
-                await relay.ConfigureControlAsync(settings);
+                var previousOptions = activeOptions;
+                var applied = await relay.ConfigureControlAsync(settings);
+                settings = settings with { CenterFrequency = applied.CenterFrequency, Ppm = applied.Ppm,
+                    AutomaticGain = applied.AutomaticGain, GainTenthsDb = applied.GainTenthsDb,
+                    ManagedSampleRate = applied.ManagedSampleRate };
+                if (!previousOptions.LockCenterFrequency && settings.LockCenterFrequency)
+                    FrequencyBox.Text = (settings.CenterFrequency / 1_000_000m).ToString(CultureInfo.InvariantCulture);
+                if (!previousOptions.LockPpm && settings.LockPpm)
+                    PpmBox.Text = settings.Ppm.ToString(CultureInfo.InvariantCulture);
+                if (!previousOptions.LockGain && settings.LockGain)
+                {
+                    GainBox.Text = (settings.GainTenthsDb / 10m).ToString(CultureInfo.InvariantCulture);
+                    AutoGainBox.IsChecked = settings.AutomaticGain;
+                }
+                if (!previousOptions.LockSampleRate && settings.LockSampleRate)
+                    SampleRateBox.SelectedItem = (settings.ManagedSampleRate / 1_000_000m).ToString(CultureInfo.InvariantCulture);
                 activeOptions = activeOptions with { AcceptClientCommands = settings.AcceptClientCommands,
+                    LockCenterFrequency = settings.LockCenterFrequency, LockPpm = settings.LockPpm,
+                    LockGain = settings.LockGain, LockSampleRate = settings.LockSampleRate,
                     CenterFrequency = settings.CenterFrequency, Ppm = settings.Ppm,
                     AutomaticGain = settings.AutomaticGain, GainTenthsDb = settings.GainTenthsDb,
                     ManagedSampleRate = settings.ManagedSampleRate };
@@ -446,8 +473,20 @@ public partial class SessionView : System.Windows.Controls.UserControl
 
     private void UpdateTuning()
     {
-        TuningPanel.IsEnabled = ManagedControlRadio.IsChecked == true;
-        GainInput.IsEnabled = AutoGainBox.IsChecked != true;
+        FrequencyInput.IsEnabled = LockFrequencyBox.IsChecked == true;
+        PpmInput.IsEnabled = LockPpmBox.IsChecked == true;
+        GainInput.IsEnabled = LockGainBox.IsChecked == true && AutoGainBox.IsChecked != true;
+        AutoGainBox.IsEnabled = LockGainBox.IsChecked == true;
+        SampleRateBox.IsEnabled = LockSampleRateBox.IsChecked == true;
+    }
+
+    private void StepFrequency(int direction)
+    {
+        if (!decimal.TryParse(FrequencyBox.Text, NumberStyles.Number, CultureInfo.InvariantCulture, out var mhz)) return;
+        var frequencyHz = mhz * 1_000_000m;
+        if (frequencyHz < 1 || frequencyHz > uint.MaxValue || frequencyHz != decimal.Truncate(frequencyHz)) return;
+        frequencyHz = Math.Clamp(frequencyHz + direction * FrequencyStepHz, 1m, (decimal)uint.MaxValue);
+        FrequencyBox.Text = (frequencyHz / 1_000_000m).ToString("0.######", CultureInfo.InvariantCulture);
     }
 
     private void StepPpm(int direction)
@@ -467,13 +506,20 @@ public partial class SessionView : System.Windows.Controls.UserControl
 
     private void PpmUp_Click(object sender, RoutedEventArgs e) => StepPpm(1);
     private void PpmDown_Click(object sender, RoutedEventArgs e) => StepPpm(-1);
+    private void FrequencyUp_Click(object sender, RoutedEventArgs e) => StepFrequency(1);
+    private void FrequencyDown_Click(object sender, RoutedEventArgs e) => StepFrequency(-1);
     private void GainUp_Click(object sender, RoutedEventArgs e) => StepGain(1);
     private void GainDown_Click(object sender, RoutedEventArgs e) => StepGain(-1);
+    private void Frequency_MouseWheel(object sender, MouseWheelEventArgs e) { StepFrequency(Math.Sign(e.Delta)); e.Handled = true; }
     private void Ppm_MouseWheel(object sender, MouseWheelEventArgs e) { StepPpm(Math.Sign(e.Delta)); e.Handled = true; }
     private void Gain_MouseWheel(object sender, MouseWheelEventArgs e) { StepGain(Math.Sign(e.Delta)); e.Handled = true; }
     private void Ppm_KeyDown(object sender, KeyEventArgs e)
     {
         if (e.Key is Key.Up or Key.Down) { StepPpm(e.Key == Key.Up ? 1 : -1); e.Handled = true; }
+    }
+    private void Frequency_KeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key is Key.Up or Key.Down) { StepFrequency(e.Key == Key.Up ? 1 : -1); e.Handled = true; }
     }
     private void Gain_KeyDown(object sender, KeyEventArgs e)
     {
@@ -500,7 +546,7 @@ public partial class SessionView : System.Windows.Controls.UserControl
                 ? $"{(gainTenths / 10m).ToString("0.#", CultureInfo.InvariantCulture)} dB"
                 : snapshot.RequestedGainIndex is uint gainIndex ? $"ゲイン段階 {gainIndex}" : "未取得";
         CurrentSettingsText.Text = $"中心周波数: {FormatSettingFrequency(snapshot.RequestedFrequency)}　" +
-            $"周波数補正(PPM): {snapshot.RequestedPpm?.ToString(CultureInfo.InvariantCulture) ?? "未取得"}　" +
+            $"周波数補正(ppm): {snapshot.RequestedPpm?.ToString(CultureInfo.InvariantCulture) ?? "未取得"}　" +
             $"Gain: {gain}　" +
             $"サンプルレート: {FormatSettingRate(snapshot.RequestedSampleRate)}";
         SessionStatus = snapshot.Status switch

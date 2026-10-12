@@ -2,6 +2,7 @@
 // Copyright (c) 2026 いしかず
 using System.Buffers.Binary;
 using System.Collections.Concurrent;
+using System.Globalization;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading.Channels;
@@ -41,7 +42,7 @@ public sealed class RelayServer : IAsyncDisposable
         lock (sync)
             return new(status, message, Interlocked.Read(ref bytesReceived), frequency, sampleRate,
                 clients.Values.Select(c => new ClientSnapshot(c.Id, c.Endpoint, c.ConnectedAt,
-                    Interlocked.Read(ref c.BytesSent), options.AcceptClientCommands)).ToArray(), ppm, automaticGain, gainTenthsDb, gainIndex);
+                    Interlocked.Read(ref c.BytesSent), !options.LockCenterFrequency || !options.LockPpm || !options.LockGain || !options.LockSampleRate)).ToArray(), ppm, automaticGain, gainTenthsDb, gainIndex);
     }
 
     public async Task StartAsync(RelayOptions settings, int? initialPpm = null)
@@ -96,36 +97,61 @@ public sealed class RelayServer : IAsyncDisposable
         finally { lifecycle.Release(); }
     }
 
-    public async Task ConfigureControlAsync(RelayOptions settings)
+    public async Task<RelayOptions> ConfigureControlAsync(RelayOptions settings)
     {
         settings.Validate();
         await commandWrite.WaitAsync();
         try
         {
+            RelayOptions effective;
             TcpClient? target;
             CancellationToken token;
             lock (sync)
             {
-                options = options with { AcceptClientCommands = settings.AcceptClientCommands,
-                    CenterFrequency = settings.CenterFrequency, Ppm = settings.Ppm,
-                    AutomaticGain = settings.AutomaticGain, GainTenthsDb = settings.GainTenthsDb,
-                    ManagedSampleRate = settings.ManagedSampleRate };
+                // Snapshot the latest client requests only after acquiring commandWrite, so
+                // an in-flight command finishes before a newly enabled lock adopts its value.
+                effective = settings with
+                {
+                    CenterFrequency = !options.LockCenterFrequency && settings.LockCenterFrequency && frequency is uint requestedFrequency
+                        ? requestedFrequency : settings.CenterFrequency,
+                    Ppm = !options.LockPpm && settings.LockPpm && ppm is int requestedPpm
+                        ? requestedPpm : settings.Ppm,
+                    AutomaticGain = !options.LockGain && settings.LockGain && automaticGain is bool requestedAutomaticGain
+                        ? requestedAutomaticGain : settings.AutomaticGain,
+                    GainTenthsDb = !options.LockGain && settings.LockGain && gainTenthsDb is int requestedGain
+                        ? requestedGain : settings.GainTenthsDb,
+                    ManagedSampleRate = !options.LockSampleRate && settings.LockSampleRate && sampleRate is uint requestedSampleRate
+                        ? requestedSampleRate : settings.ManagedSampleRate
+                };
+                options = options with { AcceptClientCommands = effective.AcceptClientCommands,
+                    LockCenterFrequency = effective.LockCenterFrequency, LockPpm = effective.LockPpm,
+                    LockGain = effective.LockGain, LockSampleRate = effective.LockSampleRate,
+                    CenterFrequency = effective.CenterFrequency, Ppm = effective.Ppm,
+                    AutomaticGain = effective.AutomaticGain, GainTenthsDb = effective.GainTenthsDb,
+                    ManagedSampleRate = effective.ManagedSampleRate };
                 target = upstream;
                 token = runCts?.Token ?? CancellationToken.None;
             }
-            if (target != null && !settings.AcceptClientCommands)
-                await ApplyManagedSettingsAsync(target, settings, token);
+            if (target != null)
+                await ApplyManagedSettingsAsync(target, effective, token);
+            return effective;
         }
         finally { commandWrite.Release(); }
     }
 
     private async Task ApplyManagedSettingsAsync(TcpClient target, RelayOptions settings, CancellationToken token)
     {
-        // Frequency/PPM/gain are shared by every receiver. Disable digital AGC for manual gain.
-        var commands = new List<(byte Code, uint Value)> { (1, settings.CenterFrequency),
-            (2, settings.ManagedSampleRate), (5, unchecked((uint)settings.Ppm)),
-            (8, 0), (3, settings.AutomaticGain ? 0u : 1u) };
-        if (!settings.AutomaticGain) commands.Add((4, unchecked((uint)settings.GainTenthsDb)));
+        var commands = new List<(byte Code, uint Value)>();
+        if (settings.LockCenterFrequency) commands.Add((1, settings.CenterFrequency));
+        if (settings.LockSampleRate) commands.Add((2, settings.ManagedSampleRate));
+        if (settings.LockPpm) commands.Add((5, unchecked((uint)settings.Ppm)));
+        if (settings.LockGain)
+        {
+            // Opcode 3 selects tuner automatic or manual gain. Digital AGC is kept disabled.
+            commands.Add((8, 0));
+            commands.Add((3, settings.AutomaticGain ? 0u : 1u));
+            if (!settings.AutomaticGain) commands.Add((4, unchecked((uint)settings.GainTenthsDb)));
+        }
         foreach (var (code, value) in commands)
         {
             var packet = new byte[5];
@@ -136,12 +162,15 @@ public sealed class RelayServer : IAsyncDisposable
         lock (sync)
         {
             if (upstream != target) return;
-            frequency = settings.CenterFrequency;
-            sampleRate = settings.ManagedSampleRate;
-            ppm = settings.Ppm;
-            automaticGain = settings.AutomaticGain;
-            gainTenthsDb = settings.AutomaticGain ? null : settings.GainTenthsDb;
-            gainIndex = null;
+            if (settings.LockCenterFrequency) frequency = settings.CenterFrequency;
+            if (settings.LockSampleRate) sampleRate = settings.ManagedSampleRate;
+            if (settings.LockPpm) ppm = settings.Ppm;
+            if (settings.LockGain)
+            {
+                automaticGain = settings.AutomaticGain;
+                gainTenthsDb = settings.AutomaticGain ? null : settings.GainTenthsDb;
+                if (!settings.AutomaticGain) gainIndex = null;
+            }
         }
     }
 
@@ -215,13 +244,13 @@ public sealed class RelayServer : IAsyncDisposable
                     {
                         upstream = socket;
                         frequency = sampleRate = null;
-                        ppm = null;
                         automaticGain = null;
                         gainTenthsDb = null;
                         gainIndex = null;
                         current = options;
                     }
-                    if (!current.AcceptClientCommands) await ApplyManagedSettingsAsync(socket, current, token);
+                    if (current.LockCenterFrequency || current.LockPpm || current.LockGain || current.LockSampleRate)
+                        await ApplyManagedSettingsAsync(socket, current, token);
                     lock (sync) header = newHeader;
                 }
                 finally { commandWrite.Release(); }
@@ -344,34 +373,71 @@ public sealed class RelayServer : IAsyncDisposable
             await commandWrite.WaitAsync(client.Token);
             try
             {
-                TcpClient? target;
-                lock (sync) target = options.AcceptClientCommands ? upstream : null;
-                if (target == null)
-                {
-                    if (!client.ReadOnlyNoticeLogged)
-                    {
-                        client.ReadOnlyNoticeLogged = true;
-                        Log($"クライアント操作ロック中のため、設定変更を無視しました: {client.Endpoint}");
-                    }
-                    continue;
-                }
-                // RTL TCP commands are 1 opcode + 4 parameter bytes, forwarded verbatim.
-                await WriteWithTimeoutAsync(target.GetStream(), command, client.Token);
+                var opcode = command[0];
                 var value = BinaryPrimitives.ReadUInt32BigEndian(command.AsSpan(1));
+                TcpClient? target;
+                bool locked;
+                bool canForward;
                 lock (sync)
                 {
-                    if (target != upstream) continue;
-                    if (command[0] == 1) frequency = value;
-                    if (command[0] == 2) sampleRate = value;
-                    if (command[0] == 5) ppm = unchecked((int)value);
-                    if (command[0] == 3) automaticGain = value == 0;
-                    if (command[0] == 4) { gainTenthsDb = unchecked((int)value); gainIndex = null; }
-                    if (command[0] == 13) { gainIndex = value; gainTenthsDb = null; }
+                    locked = IsCommandLocked(opcode, options);
+                    target = locked ? null : upstream;
+                    canForward = !locked && target != null && target == upstream;
+                    if (canForward)
+                    {
+                        RecordRequestedSetting(opcode, value);
+                    }
                 }
+                var detail = $"パラメーター操作: [{client.Endpoint}] {FormatClientCommand(opcode, value)}";
+                Log(locked ? detail + "（ロック中）"
+                    : canForward ? detail
+                    : detail + "（転送先なし）");
+                if (!canForward || target is null)
+                    continue;
+                // RTL TCP commands are 1 opcode + 4 parameter bytes, forwarded verbatim.
+                await WriteWithTimeoutAsync(target.GetStream(), command, client.Token);
             }
             finally { commandWrite.Release(); }
         }
     }
+
+    private void RecordRequestedSetting(byte opcode, uint value)
+    {
+        if (opcode == 1) frequency = value;
+        if (opcode == 2) sampleRate = value;
+        if (opcode == 5) ppm = unchecked((int)value);
+        if (opcode == 3) automaticGain = value == 0;
+        if (opcode == 4) { gainTenthsDb = unchecked((int)value); gainIndex = null; }
+        if (opcode == 13) { gainIndex = value; gainTenthsDb = null; }
+    }
+
+    private static string FormatClientCommand(byte opcode, uint value) => opcode switch
+    {
+        1 => $"中心周波数 {(value / 1_000_000m).ToString("0.######", CultureInfo.InvariantCulture)}MHz",
+        2 => $"サンプルレート {(value / 1_000_000m).ToString("0.###", CultureInfo.InvariantCulture)}MS/s",
+        3 => value == 0 ? "Gain 自動" : "Gain 手動",
+        4 => $"Gain {(unchecked((int)value) / 10m).ToString("0.#", CultureInfo.InvariantCulture)}dB",
+        5 => $"周波数補正 {unchecked((int)value)}ppm",
+        6 => $"IF Gain stage {value >> 16} {(unchecked((short)value) / 10m).ToString("0.#", CultureInfo.InvariantCulture)}dB",
+        7 => $"テストモード {(value == 0 ? "OFF" : "ON")}",
+        8 => $"デジタルAGC {(value == 0 ? "OFF" : "ON")}",
+        9 => $"直接サンプリング {value}",
+        10 => $"オフセットチューニング {(value == 0 ? "OFF" : "ON")}",
+        11 => $"RTL基準クロック {value}Hz",
+        12 => $"チューナー基準クロック {value}Hz",
+        13 => $"Gain 段階 {value}",
+        14 => $"バイアスT {(value == 0 ? "OFF" : "ON")}",
+        _ => $"コマンド 0x{opcode:X2} 0x{value:X8}"
+    };
+
+    private static bool IsCommandLocked(byte opcode, RelayOptions settings) => opcode switch
+    {
+        1 => settings.LockCenterFrequency,
+        2 => settings.LockSampleRate,
+        3 or 4 or 13 => settings.LockGain,
+        5 => settings.LockPpm,
+        _ => false
+    };
 
     private void CloseClientsLocked()
     {
@@ -398,8 +464,6 @@ public sealed class RelayServer : IAsyncDisposable
         public Channel<byte[]> Queue { get; }
         public CancellationToken Token { get; }
         public long BytesSent;
-        public bool ReadOnlyNoticeLogged;
-
         public ClientConnection(TcpClient socket, byte[] initialHeader, int capacity, CancellationToken token)
         {
             Socket = socket;

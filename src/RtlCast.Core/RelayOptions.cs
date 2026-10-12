@@ -20,6 +20,10 @@ public record RelayOptions
     public int ClientQueueCapacity { get; init; } = 64;
     public int MaxClients { get; init; } = 16;
     public bool AcceptClientCommands { get; init; } = true;
+    public bool LockCenterFrequency { get; init; }
+    public bool LockPpm { get; init; }
+    public bool LockGain { get; init; }
+    public bool LockSampleRate { get; init; }
     public uint CenterFrequency { get; init; } = 100_000_000;
     public int Ppm { get; init; }
     public bool AutomaticGain { get; init; } = true;
