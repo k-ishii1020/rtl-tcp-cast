@@ -46,8 +46,9 @@ try {
         })
         if ($externalFiles.Count -gt 0) { throw "External RTL-SDR files must not be packaged: $($externalFiles.Name -join ', ')" }
         & "$PSScriptRoot/create-source-archive.ps1"
-        Compress-Archive -Path (Join-Path $publishDirectory '*') -DestinationPath artifacts/RTL-TCP-Cast-win-x64.zip -Force
-        Get-FileHash artifacts/RTL-TCP-Cast-win-x64.zip -Algorithm SHA256 | Format-List
+        $archivePath = Join-Path $repoRoot "artifacts/RTL-TCP-Cast-win-x64-v$version.zip"
+        Compress-Archive -Path (Join-Path $publishDirectory '*') -DestinationPath $archivePath -Force
+        Get-FileHash $archivePath -Algorithm SHA256 | Format-List
     }
 }
 finally { Pop-Location }
