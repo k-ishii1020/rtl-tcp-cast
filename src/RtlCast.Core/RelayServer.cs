@@ -34,6 +34,7 @@ public sealed class RelayServer : IAsyncDisposable
     private bool? automaticGain;
     private int? gainTenthsDb;
     private uint? gainIndex;
+    private bool? rtlAgc;
 
     public event Action<RelayLog>? Logged;
 
@@ -42,7 +43,7 @@ public sealed class RelayServer : IAsyncDisposable
         lock (sync)
             return new(status, message, Interlocked.Read(ref bytesReceived), frequency, sampleRate,
                 clients.Values.Select(c => new ClientSnapshot(c.Id, c.Endpoint, c.ConnectedAt,
-                    Interlocked.Read(ref c.BytesSent), !options.LockCenterFrequency || !options.LockPpm || !options.LockGain || !options.LockSampleRate)).ToArray(), ppm, automaticGain, gainTenthsDb, gainIndex);
+                    Interlocked.Read(ref c.BytesSent), !options.LockCenterFrequency || !options.LockPpm || !options.LockGain || !options.LockRtlAgc || !options.LockSampleRate)).ToArray(), ppm, automaticGain, gainTenthsDb, gainIndex, rtlAgc);
     }
 
     public async Task StartAsync(RelayOptions settings, int? initialPpm = null)
@@ -65,6 +66,7 @@ public sealed class RelayServer : IAsyncDisposable
                 automaticGain = null;
                 gainTenthsDb = null;
                 gainIndex = null;
+                rtlAgc = null;
                 Interlocked.Exchange(ref bytesReceived, 0);
                 status = RelayStatus.Connecting;
                 message = "rtl_tcpに接続しています。";
@@ -120,14 +122,17 @@ public sealed class RelayServer : IAsyncDisposable
                         ? requestedAutomaticGain : settings.AutomaticGain,
                     GainTenthsDb = !options.LockGain && settings.LockGain && gainTenthsDb is int requestedGain
                         ? requestedGain : settings.GainTenthsDb,
+                    RtlAgc = !options.LockRtlAgc && settings.LockRtlAgc && rtlAgc is bool requestedRtlAgc
+                        ? requestedRtlAgc : settings.RtlAgc,
                     ManagedSampleRate = !options.LockSampleRate && settings.LockSampleRate && sampleRate is uint requestedSampleRate
                         ? requestedSampleRate : settings.ManagedSampleRate
                 };
                 options = options with { AcceptClientCommands = effective.AcceptClientCommands,
                     LockCenterFrequency = effective.LockCenterFrequency, LockPpm = effective.LockPpm,
-                    LockGain = effective.LockGain, LockSampleRate = effective.LockSampleRate,
+                    LockGain = effective.LockGain, LockRtlAgc = effective.LockRtlAgc, LockSampleRate = effective.LockSampleRate,
                     CenterFrequency = effective.CenterFrequency, Ppm = effective.Ppm,
                     AutomaticGain = effective.AutomaticGain, GainTenthsDb = effective.GainTenthsDb,
+                    RtlAgc = effective.RtlAgc,
                     ManagedSampleRate = effective.ManagedSampleRate };
                 target = upstream;
                 token = runCts?.Token ?? CancellationToken.None;
@@ -142,13 +147,13 @@ public sealed class RelayServer : IAsyncDisposable
     private async Task ApplyManagedSettingsAsync(TcpClient target, RelayOptions settings, CancellationToken token)
     {
         var commands = new List<(byte Code, uint Value)>();
+        if (settings.LockRtlAgc) commands.Add((8, settings.RtlAgc ? 1u : 0u));
         if (settings.LockCenterFrequency) commands.Add((1, settings.CenterFrequency));
         if (settings.LockSampleRate) commands.Add((2, settings.ManagedSampleRate));
         if (settings.LockPpm) commands.Add((5, unchecked((uint)settings.Ppm)));
         if (settings.LockGain)
         {
-            // Opcode 3 selects tuner automatic or manual gain. Digital AGC is kept disabled.
-            commands.Add((8, 0));
+            // Opcode 3 selects tuner automatic or manual gain.
             commands.Add((3, settings.AutomaticGain ? 0u : 1u));
             if (!settings.AutomaticGain) commands.Add((4, unchecked((uint)settings.GainTenthsDb)));
         }
@@ -171,6 +176,7 @@ public sealed class RelayServer : IAsyncDisposable
                 gainTenthsDb = settings.AutomaticGain ? null : settings.GainTenthsDb;
                 if (!settings.AutomaticGain) gainIndex = null;
             }
+            if (settings.LockRtlAgc) rtlAgc = settings.RtlAgc;
         }
     }
 
@@ -249,7 +255,7 @@ public sealed class RelayServer : IAsyncDisposable
                         gainIndex = null;
                         current = options;
                     }
-                    if (current.LockCenterFrequency || current.LockPpm || current.LockGain || current.LockSampleRate)
+                    if (current.LockCenterFrequency || current.LockSampleRate || current.LockPpm || current.LockGain || current.LockRtlAgc)
                         await ApplyManagedSettingsAsync(socket, current, token);
                     lock (sync) header = newHeader;
                 }
@@ -277,7 +283,7 @@ public sealed class RelayServer : IAsyncDisposable
                                     client.Close();
                                     slow.Add(client.Endpoint);
                                 }
-                        foreach (var endpoint in slow) Log($"送信待ちが上限に達したため切断しました: {endpoint}");
+                        foreach (var endpoint in slow) Log($"送信バッファが上限に達したため切断しました: {endpoint}");
                     }
                     pending = total - evenCount;
                     if (pending != 0) buffer[0] = buffer[evenCount];
@@ -299,6 +305,7 @@ public sealed class RelayServer : IAsyncDisposable
                     automaticGain = null;
                     gainTenthsDb = null;
                     gainIndex = null;
+                    rtlAgc = null;
                     CloseClientsLocked();
                 }
             }
@@ -406,6 +413,7 @@ public sealed class RelayServer : IAsyncDisposable
         if (opcode == 1) frequency = value;
         if (opcode == 2) sampleRate = value;
         if (opcode == 5) ppm = unchecked((int)value);
+        if (opcode == 8) rtlAgc = value != 0;
         if (opcode == 3) automaticGain = value == 0;
         if (opcode == 4) { gainTenthsDb = unchecked((int)value); gainIndex = null; }
         if (opcode == 13) { gainIndex = value; gainTenthsDb = null; }
@@ -415,17 +423,17 @@ public sealed class RelayServer : IAsyncDisposable
     {
         1 => $"中心周波数 {(value / 1_000_000m).ToString("0.######", CultureInfo.InvariantCulture)}MHz",
         2 => $"サンプルレート {(value / 1_000_000m).ToString("0.###", CultureInfo.InvariantCulture)}MS/s",
-        3 => value == 0 ? "Gain 自動" : "Gain 手動",
-        4 => $"Gain {(unchecked((int)value) / 10m).ToString("0.#", CultureInfo.InvariantCulture)}dB",
+        3 => value == 0 ? "Tuner Gain 自動（Tuner AGC）" : "Tuner Gain 手動",
+        4 => $"Tuner Gain {(unchecked((int)value) / 10m).ToString("0.#", CultureInfo.InvariantCulture)}dB",
         5 => $"周波数補正 {unchecked((int)value)}ppm",
         6 => $"IF Gain stage {value >> 16} {(unchecked((short)value) / 10m).ToString("0.#", CultureInfo.InvariantCulture)}dB",
         7 => $"テストモード {(value == 0 ? "OFF" : "ON")}",
-        8 => $"デジタルAGC {(value == 0 ? "OFF" : "ON")}",
+        8 => $"RTL AGC {(value == 0 ? "OFF" : "ON")}",
         9 => $"直接サンプリング {value}",
         10 => $"オフセットチューニング {(value == 0 ? "OFF" : "ON")}",
         11 => $"RTL基準クロック {value}Hz",
         12 => $"チューナー基準クロック {value}Hz",
-        13 => $"Gain 段階 {value}",
+        13 => $"Tuner Gain 段階 {value}",
         14 => $"バイアスT {(value == 0 ? "OFF" : "ON")}",
         _ => $"コマンド 0x{opcode:X2} 0x{value:X8}"
     };
@@ -435,6 +443,7 @@ public sealed class RelayServer : IAsyncDisposable
         1 => settings.LockCenterFrequency,
         2 => settings.LockSampleRate,
         3 or 4 or 13 => settings.LockGain,
+        8 => settings.LockRtlAgc,
         5 => settings.LockPpm,
         _ => false
     };

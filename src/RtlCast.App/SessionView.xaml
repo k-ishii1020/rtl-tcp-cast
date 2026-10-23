@@ -54,6 +54,7 @@
      <CheckBox x:Name="LanBox" Content="LANへ配信" VerticalAlignment="Center" Margin="14,0,0,0" ToolTip="ほかのPCから接続するときに有効にします。" />
      <CheckBox x:Name="ReconnectBox" Content="切断時の自動再接続" IsChecked="True" VerticalAlignment="Center" Margin="14,0,0,0" />
     </DockPanel>
+
    </StackPanel>
   </GroupBox>
   <GroupBox Grid.Row="3" Header="SDRデバイス設定">
@@ -66,7 +67,7 @@
     </Grid>
     <Grid x:Name="TuningPanel" TextElement.FontSize="11">
      <Grid.ColumnDefinitions><ColumnDefinition Width="145" /><ColumnDefinition Width="*" /><ColumnDefinition Width="92" /></Grid.ColumnDefinitions>
-     <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
+     <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
      <TextBlock Text="中心周波数" VerticalAlignment="Center" Margin="2" />
      <Grid Grid.Column="1" Margin="2,0">
       <Grid.ColumnDefinitions><ColumnDefinition Width="92" /><ColumnDefinition Width="36" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
@@ -93,27 +94,30 @@
       <TextBlock Grid.Column="1" Text="ppm" VerticalAlignment="Center" Margin="4,0,0,0" />
      </Grid>
      <CheckBox x:Name="LockPpmBox" Grid.Row="1" Grid.Column="2" HorizontalAlignment="Center" VerticalAlignment="Center" AutomationProperties.Name="周波数補正 ppm のクライアント操作ロック" />
-     <TextBlock Grid.Row="2" Text="Gain" VerticalAlignment="Center" Margin="2" />
+     <TextBlock Grid.Row="2" Text="Tuner Gain" VerticalAlignment="Center" Margin="2" />
      <Grid Grid.Row="2" Grid.Column="1" Margin="2,0">
       <Grid.ColumnDefinitions><ColumnDefinition Width="92" /><ColumnDefinition Width="36" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
       <DockPanel x:Name="GainInput" Grid.Column="0" Width="92" HorizontalAlignment="Left" PreviewMouseWheel="Gain_MouseWheel">
        <StackPanel DockPanel.Dock="Right">
-        <RepeatButton x:Name="GainUpButton" Content="▲" Style="{StaticResource SpinButton}" Click="GainUp_Click" AutomationProperties.Name="Gainを1 dB増やす" />
-        <RepeatButton x:Name="GainDownButton" Content="▼" Style="{StaticResource SpinButton}" Click="GainDown_Click" AutomationProperties.Name="Gainを1 dB減らす" />
+        <RepeatButton x:Name="GainUpButton" Content="▲" Style="{StaticResource SpinButton}" Click="GainUp_Click" AutomationProperties.Name="Tuner Gainを1 dB増やす" />
+        <RepeatButton x:Name="GainDownButton" Content="▼" Style="{StaticResource SpinButton}" Click="GainDown_Click" AutomationProperties.Name="Tuner Gainを1 dB減らす" />
        </StackPanel>
-       <TextBox x:Name="GainBox" Text="0" Width="78" PreviewKeyDown="Gain_KeyDown" AutomationProperties.Name="Gain dB" />
+       <TextBox x:Name="GainBox" Text="0" Width="78" PreviewKeyDown="Gain_KeyDown" AutomationProperties.Name="Tuner Gain dB" />
       </DockPanel>
       <TextBlock Grid.Column="1" Text="dB" VerticalAlignment="Center" Margin="4,0,0,0" />
-      <CheckBox x:Name="AutoGainBox" Grid.Column="2" Content="自動" IsChecked="True" VerticalAlignment="Center" Margin="8,0,0,0" />
+      <CheckBox x:Name="AutoGainBox" Grid.Column="2" Content="自動（Tuner AGC）" IsChecked="True" VerticalAlignment="Center" Margin="8,0,0,0" />
      </Grid>
-     <CheckBox x:Name="LockGainBox" Grid.Row="2" Grid.Column="2" HorizontalAlignment="Center" VerticalAlignment="Center" AutomationProperties.Name="Gainのクライアント操作ロック" />
-     <TextBlock Grid.Row="3" Text="サンプルレート" VerticalAlignment="Center" Margin="2" />
-     <Grid Grid.Row="3" Grid.Column="1" Margin="2,0">
+     <CheckBox x:Name="LockGainBox" Grid.Row="2" Grid.Column="2" HorizontalAlignment="Center" VerticalAlignment="Center" AutomationProperties.Name="Tuner Gainのクライアント操作ロック" />
+     <TextBlock Grid.Row="3" Text="RTL AGC" VerticalAlignment="Center" Margin="2" />
+     <CheckBox x:Name="RtlAgcBox" Grid.Row="3" Grid.Column="1" IsChecked="False" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="2,0" ToolTip="RTL2832U側のデジタルAGCを設定します。" AutomationProperties.Name="RTL AGC" />
+     <CheckBox x:Name="LockRtlAgcBox" Grid.Row="3" Grid.Column="2" HorizontalAlignment="Center" VerticalAlignment="Center" AutomationProperties.Name="RTL AGCのクライアント操作ロック" />
+     <TextBlock Grid.Row="4" Text="サンプルレート" VerticalAlignment="Center" Margin="2" />
+     <Grid Grid.Row="4" Grid.Column="1" Margin="2,0">
       <Grid.ColumnDefinitions><ColumnDefinition Width="92" /><ColumnDefinition Width="36" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
       <ComboBox x:Name="SampleRateBox" Grid.Column="0" Width="92" HorizontalAlignment="Left" IsEditable="False" AutomationProperties.Name="サンプルレート MS/s" />
       <TextBlock Grid.Column="1" Text="MS/s" VerticalAlignment="Center" Margin="4,0,0,0" />
      </Grid>
-     <CheckBox x:Name="LockSampleRateBox" Grid.Row="3" Grid.Column="2" HorizontalAlignment="Center" VerticalAlignment="Center" AutomationProperties.Name="サンプルレートのクライアント操作ロック" />
+     <CheckBox x:Name="LockSampleRateBox" Grid.Row="4" Grid.Column="2" HorizontalAlignment="Center" VerticalAlignment="Center" AutomationProperties.Name="サンプルレートのクライアント操作ロック" />
     </Grid>
    </StackPanel>
   </GroupBox>

@@ -8,13 +8,15 @@ namespace RtlCast.App;
 
 public partial class SettingsWindow : Window
 {
+    public int ClientQueueCapacity { get; private set; }
     public string RtlTcpPath => PathBox.Text.Trim().Trim('"');
     public bool StartWithWindows => WindowsStartupBox.IsChecked == true;
     public bool AutoStartStreaming => AutoStartStreamingBox.IsChecked == true;
-    public SettingsWindow(string path, bool startWithWindows = false, bool autoStartStreaming = false)
+    public SettingsWindow(string path, bool startWithWindows = false, bool autoStartStreaming = false, int clientQueueCapacity = 1024)
     {
         InitializeComponent();
         PathBox.Text = path;
+        BufferCapacityBox.Text = clientQueueCapacity.ToString();
         WindowsStartupBox.IsChecked = startWithWindows;
         AutoStartStreamingBox.IsChecked = autoStartStreaming;
     }
@@ -27,6 +29,9 @@ public partial class SettingsWindow : Window
     {
         if (RtlTcpPath.Length > 0 && (!File.Exists(RtlTcpPath) || !Path.GetExtension(RtlTcpPath).Equals(".exe", StringComparison.OrdinalIgnoreCase)))
         { MessageBox.Show(this, "実在するrtl_tcp.exeを指定してください。", "設定", MessageBoxButton.OK); return; }
+        if (!int.TryParse(BufferCapacityBox.Text, out var capacity) || capacity is < 1 or > 8192)
+        { MessageBox.Show(this, "送信バッファ上限は1～8192ブロックの整数で入力してください。", "設定", MessageBoxButton.OK); return; }
+        ClientQueueCapacity = capacity;
         DialogResult = true;
     }
 }

@@ -49,10 +49,12 @@ public static class SettingsStore
             $"LockCenterFrequency={settings.LockCenterFrequency.ToString().ToLowerInvariant()}",
             $"LockPpm={settings.LockPpm.ToString().ToLowerInvariant()}",
             $"LockGain={settings.LockGain.ToString().ToLowerInvariant()}",
+            $"LockRtlAgc={settings.LockRtlAgc.ToString().ToLowerInvariant()}",
             $"LockSampleRate={settings.LockSampleRate.ToString().ToLowerInvariant()}",
             $"CenterFrequency={settings.CenterFrequency}", $"Ppm={settings.Ppm}",
             $"AutomaticGain={settings.AutomaticGain.ToString().ToLowerInvariant()}",
-            $"GainTenthsDb={settings.GainTenthsDb}", $"ManagedSampleRate={settings.ManagedSampleRate}", "", "[Advanced]",
+            $"GainTenthsDb={settings.GainTenthsDb}", $"RtlAgc={settings.RtlAgc.ToString().ToLowerInvariant()}",
+            $"ManagedSampleRate={settings.ManagedSampleRate}", "", "[Advanced]",
             $"ReconnectDelaySeconds={settings.ReconnectDelay.TotalSeconds.ToString(CultureInfo.InvariantCulture)}",
             $"ConnectTimeoutSeconds={settings.ConnectTimeout.TotalSeconds.ToString(CultureInfo.InvariantCulture)}",
             $"SendTimeoutSeconds={settings.SendTimeout.TotalSeconds.ToString(CultureInfo.InvariantCulture)}",
@@ -105,7 +107,7 @@ public static class SettingsStore
         }
         var defaults = new AppSettings();
         var legacyClientControl = Flag("SDR.AcceptClientCommands", defaults.AcceptClientCommands);
-        var hasLockSettings = new[] { "SDR.LockCenterFrequency", "SDR.LockPpm", "SDR.LockGain", "SDR.LockSampleRate" }
+        var hasLockSettings = new[] { "SDR.LockCenterFrequency", "SDR.LockPpm", "SDR.LockGain", "SDR.LockRtlAgc", "SDR.LockSampleRate" }
             .Any(values.ContainsKey);
         var legacyLockDefault = !hasLockSettings && !legacyClientControl;
         var settings = defaults with
@@ -114,11 +116,13 @@ public static class SettingsStore
             LockCenterFrequency = Flag("SDR.LockCenterFrequency", legacyLockDefault),
             LockPpm = Flag("SDR.LockPpm", legacyLockDefault),
             LockGain = Flag("SDR.LockGain", legacyLockDefault),
+            LockRtlAgc = Flag("SDR.LockRtlAgc", legacyLockDefault),
             LockSampleRate = Flag("SDR.LockSampleRate", legacyLockDefault),
             CenterFrequency = Unsigned("SDR.CenterFrequency", defaults.CenterFrequency),
             Ppm = Number("SDR.Ppm", defaults.Ppm),
             AutomaticGain = Flag("SDR.AutomaticGain", defaults.AutomaticGain),
             GainTenthsDb = Number("SDR.GainTenthsDb", defaults.GainTenthsDb),
+            RtlAgc = Flag("SDR.RtlAgc", defaults.RtlAgc),
             ManagedSampleRate = Unsigned("SDR.ManagedSampleRate", defaults.ManagedSampleRate),
             SessionId = Value("Source.SessionId", ""),
             SessionName = Value("Source.SessionName", defaults.SessionName),

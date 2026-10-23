@@ -10,6 +10,7 @@ public sealed record WorkspaceSettings
     public string RtlTcpPath { get; init; } = "";
     public bool StartWithWindows { get; init; }
     public bool AutoStartStreaming { get; init; }
+    public int ClientQueueCapacity { get; init; } = 1024;
     public bool HideTrayNotice { get; init; }
     public string SelectedSessionId { get; init; } = "";
     public List<AppSettings> Sessions { get; init; } = new();
@@ -76,7 +77,11 @@ public static class WorkspaceSettingsStore
             throw new ArgumentException("選択中の配信タブIDが設定ファイル内にありません。");
         if (sessions.Any(s => !Guid.TryParseExact(s.SessionId, "N", out _)))
             throw new ArgumentException("配信設定の識別子が不正です。");
-        return new() { RtlTcpPath = application.GetValueOrDefault("RtlTcpPath", ""),
+        var capacity = 1024;
+        if (application.TryGetValue("ClientQueueCapacity", out var bufferText) &&
+            (!int.TryParse(bufferText, out capacity) || capacity is < 1 or > 8192))
+            throw new ArgumentException("送信バッファ上限は1～8192ブロックで指定してください。");
+        return new() { ClientQueueCapacity = capacity, RtlTcpPath = application.GetValueOrDefault("RtlTcpPath", ""),
             StartWithWindows = bool.TryParse(application.GetValueOrDefault("StartWithWindows", "false"), out var startup) && startup,
             AutoStartStreaming = bool.TryParse(application.GetValueOrDefault("AutoStartStreaming", "false"), out var autoStartStreaming) && autoStartStreaming,
             HideTrayNotice = bool.TryParse(application.GetValueOrDefault("HideTrayNotice", "false"), out var hideTrayNotice) && hideTrayNotice,
@@ -91,6 +96,8 @@ public static class WorkspaceSettingsStore
 
     public static void SaveFile(WorkspaceSettings settings, string path)
     {
+        if (settings.ClientQueueCapacity is < 1 or > 8192)
+            throw new ArgumentException("送信バッファ上限は1～8192ブロックで指定してください。");
         if (settings.Sessions.Count == 0 || settings.Sessions.Select(s => s.SessionId).Distinct().Count() != settings.Sessions.Count)
             throw new ArgumentException("配信設定の識別子が不正です。");
         if (!settings.Sessions.Any(s => s.SessionId == settings.SelectedSessionId))
@@ -99,6 +106,7 @@ public static class WorkspaceSettingsStore
         var lines = new List<string> { "; RTL-TCP-CAST settings", "[Application]", $"RtlTcpPath={settings.RtlTcpPath}",
             $"SelectedSessionId={settings.SelectedSessionId}", $"StartWithWindows={settings.StartWithWindows.ToString().ToLowerInvariant()}",
             $"AutoStartStreaming={settings.AutoStartStreaming.ToString().ToLowerInvariant()}",
+            $"ClientQueueCapacity={settings.ClientQueueCapacity}",
             $"HideTrayNotice={settings.HideTrayNotice.ToString().ToLowerInvariant()}", "" };
         foreach (var session in settings.Sessions)
         {

@@ -172,7 +172,7 @@ public partial class MainWindow : Window
 
     private void CreateTab(AppSettings settings)
     {
-        var session = new SessionView(settings, () => workspace.RtlTcpPath, SaveSession, ValidateStart);
+        var session = new SessionView(settings, () => workspace.RtlTcpPath, SaveSession, ValidateStart, () => workspace.ClientQueueCapacity);
         var indicator = new TextBlock { Text = "■", Foreground = Brushes.Firebrick, Margin = new Thickness(5,0,4,0) };
         var title = new TextBlock { Text = settings.SessionName };
         var count = new TextBlock();
@@ -400,14 +400,14 @@ public partial class MainWindow : Window
     public void SetRtlTcpPath(string path) { workspace = workspace with { RtlTcpPath = path }; SaveWorkspace(); }
     private void Settings_Click(object sender, RoutedEventArgs e)
     {
-        var dialog = new SettingsWindow(workspace.RtlTcpPath, workspace.StartWithWindows, workspace.AutoStartStreaming) { Owner = this };
+        var dialog = new SettingsWindow(workspace.RtlTcpPath, workspace.StartWithWindows, workspace.AutoStartStreaming, workspace.ClientQueueCapacity) { Owner = this };
         if (dialog.ShowDialog() != true) return;
         try
         {
             if (dialog.StartWithWindows != workspace.StartWithWindows && persistSettings)
                 WindowsStartup.SetEnabled(dialog.StartWithWindows);
             workspace = workspace with { RtlTcpPath = dialog.RtlTcpPath, StartWithWindows = dialog.StartWithWindows,
-                AutoStartStreaming = dialog.AutoStartStreaming };
+                AutoStartStreaming = dialog.AutoStartStreaming, ClientQueueCapacity = dialog.ClientQueueCapacity };
             SaveWorkspace();
             foreach (var session in Sessions) _ = session.RefreshDevicesAsync();
         }
