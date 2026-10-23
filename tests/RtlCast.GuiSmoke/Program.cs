@@ -396,7 +396,7 @@ internal static class Program
             "Unlocked setting fields reflect client values while disabled");
         foreach (var name in new[] { "LockFrequencyBox", "LockPpmBox", "LockGainBox", "LockSampleRateBox" })
             Find<CheckBox>(name).IsChecked = true;
-        var managed = new byte[30];
+        var managed = new byte[25];
         await source.GetStream().ReadExactlyAsync(managed, timeout.Token);
         Assert(managed[0] == 1 && System.Buffers.Binary.BinaryPrimitives.ReadUInt32BigEndian(managed.AsSpan(1, 4)) == 145_500_000,
             "GUI managed frequency reaches upstream");
@@ -404,7 +404,7 @@ internal static class Program
             "GUI managed sample rate reaches upstream");
         Assert(managed[10] == 5 && System.Buffers.Binary.BinaryPrimitives.ReadInt32BigEndian(managed.AsSpan(11, 4)) == -21,
             "GUI signed PPM reaches upstream");
-        Assert(managed[20] == 3 && managed[25] == 4 && System.Buffers.Binary.BinaryPrimitives.ReadInt32BigEndian(managed.AsSpan(26, 4)) == 143,
+        Assert(managed[15] == 3 && managed[20] == 4 && System.Buffers.Binary.BinaryPrimitives.ReadInt32BigEndian(managed.AsSpan(21, 4)) == 143,
             "GUI gain uses tenths of dB");
         await Until(() => WorkspaceSettingsStore.Load(guiSettingsDirectory).Sessions[0].LockCenterFrequency &&
             WorkspaceSettingsStore.Load(guiSettingsDirectory).Sessions[0].LockPpm &&

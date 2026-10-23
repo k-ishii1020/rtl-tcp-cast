@@ -80,7 +80,7 @@ static async Task ManagedControl()
     using var mock = new MockUpstream();
     await using var relay = new RelayServer();
     var settings = Options(mock.Port) with { AcceptClientCommands = false,
-        LockCenterFrequency = true, LockPpm = true, LockGain = true, LockSampleRate = true,
+        LockCenterFrequency = true, LockPpm = true, LockGain = true, LockRtlAgc = true, LockSampleRate = true,
         CenterFrequency = 145_500_000, Ppm = -17, AutomaticGain = false, GainTenthsDb = 143 };
     var blocked = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
     relay.Logged += log => { if (log.Message.Contains("（ロック中）", StringComparison.Ordinal)) blocked.TrySetResult(); };
@@ -89,9 +89,9 @@ static async Task ManagedControl()
     await mock.SendHeader(source);
     async Task CheckManaged(TcpClient target, uint frequency, int ppm, int gain)
     {
-        var expected = new[] { Command(1, frequency), Command(2, 2_048_000),
-            Command(5, unchecked((uint)ppm)), Command(8, 0), Command(3, 1), Command(4, unchecked((uint)gain)) }.SelectMany(x => x).ToArray();
-        Assert((await Read(target, 30)).SequenceEqual(expected), "Managed wire commands including signed PPM and gain units");
+        var expected = new[] { Command(8, 0), Command(1, frequency), Command(2, 2_048_000),
+            Command(5, unchecked((uint)ppm)), Command(3, 1), Command(4, unchecked((uint)gain)) }.SelectMany(x => x).ToArray();
+        Assert((await Read(target, expected.Length)).SequenceEqual(expected), "Managed wire commands including signed PPM and gain units");
     }
     await CheckManaged(source, 145_500_000, -17, 143);
     await Until(() => relay.GetSnapshot().Status == RelayStatus.Streaming);
@@ -111,17 +111,24 @@ static async Task ManagedControl()
     await CheckManaged(next, 144_000_000, 12, -10);
     await Until(() => relay.GetSnapshot().Status == RelayStatus.Streaming);
     var unlocked = settings with { AcceptClientCommands = true,
-        LockCenterFrequency = false, LockPpm = false, LockGain = false, LockSampleRate = false };
+        LockCenterFrequency = false, LockPpm = false, LockGain = false, LockRtlAgc = false, LockSampleRate = false };
     await relay.ConfigureControlAsync(unlocked);
     using var newClient = await Connect(relay);
     await newClient.GetStream().WriteAsync(Command(1, 100));
     Assert((await Read(next, 5)).SequenceEqual(Command(1, 100)), "Switch back enables clients");
     await newClient.GetStream().WriteAsync(Command(3, 0));
     Assert((await Read(next, 5)).SequenceEqual(Command(3, 0)), "Client can select automatic gain");
+    await newClient.GetStream().WriteAsync(Command(8, 1));
+    Assert((await Read(next, 5)).SequenceEqual(Command(8, 1)), "Client can enable unlocked RTL AGC");
+    Assert(relay.GetSnapshot().RequestedRtlAgc == true, "Client RTL AGC snapshot");
     await relay.ConfigureControlAsync(unlocked with { LockGain = true, AutomaticGain = true });
-    var auto = await Read(next, 10);
-    Assert(auto.AsSpan(0, 5).SequenceEqual(Command(8, 0)) && auto.AsSpan(5).SequenceEqual(Command(3, 0)),
-        "Auto gain command and no manual gain");
+    var auto = await Read(next, 5);
+    Assert(auto.SequenceEqual(Command(3, 0)), "Auto gain command without changing RTL AGC");
+    Assert(relay.GetSnapshot().RequestedRtlAgc == true, "Tuner gain leaves RTL AGC enabled");
+    await relay.ConfigureControlAsync(unlocked with { LockRtlAgc = true, RtlAgc = false });
+    Assert((await Read(next, 5)).SequenceEqual(Command(8, 1)), "Enabling RTL AGC lock adopts client value");
+    await relay.ConfigureControlAsync(unlocked with { LockRtlAgc = true, RtlAgc = false });
+    Assert((await Read(next, 5)).SequenceEqual(Command(8, 0)), "Locked RTL AGC can be disabled independently");
     Assert(relay.GetSnapshot().RequestedAutomaticGain == true && relay.GetSnapshot().RequestedGainTenthsDb == null, "Auto gain snapshot");
     await relay.StopAsync();
     Assert(relay.GetSnapshot().RequestedAutomaticGain == null && relay.GetSnapshot().RequestedGainTenthsDb == null, "Stopped gain unknown");
